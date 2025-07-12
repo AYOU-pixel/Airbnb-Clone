@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import Image from "next/image"; // Import the Image component
 import { Heart, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
@@ -106,11 +107,13 @@ export default function ListingCard({
         onTouchEnd={handleTouchEnd}
       >
         <div className="relative w-full h-full">
-          <img
+          {/* Replaced <img> with <Image /> */}
+          <Image
             src={images[currentImageIndex]}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
+            fill // Use fill to make the image take up the parent's size
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Example sizes, adjust based on your layout
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>

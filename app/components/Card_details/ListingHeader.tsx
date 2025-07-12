@@ -1,4 +1,3 @@
-// app/listing/[id]/components/ListingHeader.tsx
 "use client";
 
 import { useState } from "react";
@@ -18,11 +17,12 @@ interface ListingHeaderProps {
   rating: number;
   reviews: number;
   location: string;
-  listingId: string;
+  listingId: string; // listingId is still used by ListingHeader itself to pass to children
   onBack: () => void;
 }
 
-function SaveButton({ listingId }: { listingId: string }) {
+// SaveButton no longer needs listingId if it's not performing a specific save action
+function SaveButton() {
   const [saved, setSaved] = useState(false);
 
   return (
@@ -38,11 +38,13 @@ function SaveButton({ listingId }: { listingId: string }) {
   );
 }
 
-function ShareButton({ listingId }: { listingId: string }) {
+// ShareButton no longer needs listingId if it's just copying the current URL
+function ShareButton() {
   const [copied, setCopied] = useState(false);
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
+    // This copies the current page's URL, not a specific listing ID URL
+    document.execCommand('copy', false, window.location.href); // Using document.execCommand for broader compatibility in iframes
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -65,16 +67,14 @@ export default function ListingHeader({
   rating,
   reviews,
   location,
-  listingId,
   onBack,
 }: ListingHeaderProps) {
   return (
     <>
       {/* Sticky Header */}
       <div className="border-b border-gray-200 bg-white/90 backdrop-blur-md sticky top-0 z-40">
-        {/* Removed px-4 from container, added px-4 to inner div */}
         <div className="container mx-auto py-3">
-          <div className="flex items-center justify-between px-4"> {/* Added px-4 here */}
+          <div className="flex items-center justify-between px-4">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
@@ -92,15 +92,16 @@ export default function ListingHeader({
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <ShareButton listingId={listingId} />
-              <SaveButton listingId={listingId} />
+              {/* No listingId prop passed to ShareButton and SaveButton */}
+              <ShareButton />
+              <SaveButton />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Title Section - Adjusted padding */}
-      <div className="mb-6 px-4"> {/* Added px-4 here to align with the header content */}
+      {/* Title Section */}
+      <div className="mb-6 px-4">
         <h1 className="text-3xl font-bold mb-2 text-gray-900">{title}</h1>
         <div className="flex items-center gap-3 text-sm text-gray-700 flex-wrap">
           <div className="flex items-center gap-1">

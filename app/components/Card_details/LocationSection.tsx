@@ -5,7 +5,7 @@ import Map from "./Map";
 export default function LocationSection({ location }: { location: string }) {
   return (
     <div id="location" className="space-y-4 py-6 border-b border-gray-200">
-      <h2 className="text-xl font-semibold text-gray-900">Where you'll be</h2>
+      <h2 className="text-xl font-semibold text-gray-900">Where you&apos;ll be</h2>
 
       <div className="flex items-start gap-2">
         <MapPin className="w-5 h-5 mt-0.5 text-gray-500 flex-shrink-0" />
