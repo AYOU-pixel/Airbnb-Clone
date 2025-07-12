@@ -34,7 +34,7 @@ interface ExpandedSearchBarProps {
   checkOutDate: Date | undefined;
   setCheckOutDate: (date: Date | undefined) => void;
   guests: number;
-  setGuests: (guests: number) => void;
+  setGuests: (guests: number) => void; // This setGuests expects a number
   locationSuggestions: LocationSuggestion[];
   activeField: "where" | "checkIn" | "checkOut" | "who" | null;
   setActiveField: (field: "where" | "checkIn" | "checkOut" | "who" | null) => void;
@@ -365,10 +365,9 @@ export function ExpandedSearchBar({
                 className="rounded-full w-8 h-8 border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent popover from closing
-                  setGuests((prev) => Math.max(0, prev - 1));
+                  setGuests(Math.max(0, guests - 1)); // ✅ Apply the fix here
                 }}
                 disabled={guests === 0}
-                // tabIndex removed as buttons are naturally focusable
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -381,9 +380,8 @@ export function ExpandedSearchBar({
                 className="rounded-full w-8 h-8 border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent popover from closing
-                  setGuests((prev) => prev + 1);
+                  setGuests(guests + 1); // ✅ Apply the fix here (or Math.max(0, guests + 1) if guests can be negative initially, but not in this case)
                 }}
-                // tabIndex removed as buttons are naturally focusable
               >
                 <Plus className="h-4 w-4" />
               </Button>
