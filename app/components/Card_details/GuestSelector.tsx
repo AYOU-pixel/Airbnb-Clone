@@ -1,8 +1,16 @@
 "use client";
 import { useState } from "react";
 
-export default function GuestSelector({ maxGuests }: { maxGuests: number }) {
-  const [guests, setGuests] = useState(1);
+export default function ExpandedSearchBar({ maxGuests }: { maxGuests: number }) {
+  const [guests, setGuests] = useState<number>(1);
+
+  const decreaseGuests = () => {
+    setGuests(Math.max(1, guests - 1)); 
+  };
+
+  const increaseGuests = () => {
+    setGuests(Math.min(maxGuests, guests + 1));
+  };
 
   return (
     <div className="pt-4 pb-2 flex justify-between items-center">
@@ -15,7 +23,7 @@ export default function GuestSelector({ maxGuests }: { maxGuests: number }) {
 
       <div className="flex items-center gap-3">
         <button
-          onClick={() => setGuests(Math.max(1, guests - 1))}
+          onClick={decreaseGuests}
           className={`w-8 h-8 rounded-full border flex items-center justify-center text-gray-700 transition hover:bg-gray-100 ${
             guests <= 1 ? "opacity-30 cursor-not-allowed" : "border-gray-400"
           }`}
@@ -25,7 +33,7 @@ export default function GuestSelector({ maxGuests }: { maxGuests: number }) {
         </button>
         <span className="w-6 text-center text-sm">{guests}</span>
         <button
-          onClick={() => setGuests(Math.min(maxGuests, guests + 1))}
+          onClick={increaseGuests}
           className={`w-8 h-8 rounded-full border flex items-center justify-center text-gray-700 transition hover:bg-gray-100 ${
             guests >= maxGuests ? "opacity-30 cursor-not-allowed" : "border-gray-400"
           }`}
@@ -37,3 +45,4 @@ export default function GuestSelector({ maxGuests }: { maxGuests: number }) {
     </div>
   );
 }
+
