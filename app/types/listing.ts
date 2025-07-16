@@ -17,3 +17,10 @@ export interface Listing {
   host: string;
   guests: number;
 }
+
+// types.ts
+export type UserType = {
+  _id: string;
+  name: string;
+  email: string;
+};

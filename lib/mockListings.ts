@@ -373,4 +373,4 @@ export const listings: Listing[] = [
     host: "Isabella Clark",
     guests: 10,
   },
-];
+]
