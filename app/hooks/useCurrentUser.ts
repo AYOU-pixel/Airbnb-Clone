@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { UserType } from "@/app/types";
+import { UserType } from "@/app/types/listing";
 
 export function useCurrentUser() {
   const [user, setUser] = useState<UserType | null>(null);
