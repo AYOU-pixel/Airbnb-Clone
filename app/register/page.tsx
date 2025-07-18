@@ -12,11 +12,33 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
 
+  const validatePassword = (password: string) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password.length < minLength) {
+      return "Password must be at least 8 characters long";
+    }
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      return "Password must include uppercase, lowercase, number, and special character";
+    }
+    return "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setMessage(`❌ ${passwordError}`);
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setMessage("❌ Passwords do not match.");
+      setMessage("❌ Passwords do not match");
       return;
     }
 
@@ -34,18 +56,21 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setMessage(`❌ ${data.message || "Something went wrong."}`);
+        setMessage(`❌ ${data.message || "Something went wrong"}`);
       } else {
-        setMessage("✅ Registration successful!");
+        setMessage("✅ Registration successful! Redirecting...");
         setFirstName("");
         setLastName("");
         setEmail("");
         setPassword("");
         setConfirmPassword("");
+        setTimeout(() => {
+          window.location.href = "/"; // إعادة التوجيه إلى الصفحة الرئيسية
+        }, 1000);
       }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      setMessage("❌ Failed to register.");
+    } catch (_: unknown) {
+      setMessage("❌ Failed to register");
     }
   };
 
@@ -110,7 +135,9 @@ export default function RegisterPage() {
           </div>
 
           {message && (
-            <p className={`text-sm text-center mb-4 ${message.startsWith('❌') ? 'text-rose-600' : 'text-green-600'}`}>{message}</p>
+            <p className={`text-sm text-center mb-4 ${message.startsWith('❌') ? 'text-rose-600' : 'text-green-600'}`}>
+              {message}
+            </p>
           )}
 
           <Button
