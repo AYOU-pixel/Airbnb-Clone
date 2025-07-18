@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 // 🧪 سر التوقيع الخاص بالتوكن
-const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
+const JWT_SECRET = process.env.JWT_SECRET || "N1Zd8e8LrFci0FTD0xY2";
 
 export async function POST(req: Request) {
   try {
