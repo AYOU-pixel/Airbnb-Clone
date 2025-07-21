@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import Image from "next/image"; // Import the Image component
+import React, { useState, useRef, useCallback } from "react";
 import { Heart, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { CldImage } from "next-cloudinary";
 
 type Props = {
   id: string;
@@ -36,49 +36,95 @@ export default function ListingCard({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   const imageRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
 
-  const handleNextImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-  };
+  // Stabilize hover state with debouncing
+  const handleMouseEnter = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    setIsHovered(true);
+  }, []);
 
-  const handlePrevImage = (e: React.MouseEvent) => {
+  const handleMouseLeave = useCallback(() => {
+    if (!isInteracting) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setIsHovered(false);
+      }, 100);
+    }
+  }, [isInteracting]);
+
+  // Prevent hover state from changing during interaction
+  const handleInteractionStart = useCallback(() => {
+    setIsInteracting(true);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+  }, []);
+
+  const handleInteractionEnd = useCallback(() => {
+    setIsInteracting(false);
+    // Small delay to prevent flicker
+    setTimeout(() => {
+      if (!isHovered) {
+        setIsHovered(false);
+      }
+    }, 50);
+  }, [isHovered]);
+
+  const handleNextImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
+    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+  }, [images.length]);
+
+  const handlePrevImage = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setCurrentImageIndex(
       (prevIndex) => (prevIndex - 1 + images.length) % images.length
     );
-  };
+  }, [images.length]);
 
-  const handleLikeToggle = (e: React.MouseEvent) => {
+  const handleLikeToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setIsLiked(!isLiked);
     console.log(`Toggled like for ${title}: ${!isLiked}`);
-  };
+  }, [isLiked, title]);
 
-  const handleCardClick = () => {
-    router.push(`/listing/${id}`);
-  };
+  const handleCardClick = useCallback(() => {
+    if (!isInteracting) {
+      router.push(`/listing/${id}`);
+    }
+  }, [router, id, isInteracting]);
 
-  const handleDotClick = (index: number, e: React.MouseEvent) => {
+  const handleDotClick = useCallback((index: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setCurrentImageIndex(index);
-  };
+  }, []);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
-  };
+    handleInteractionStart();
+  }, [handleInteractionStart]);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
     setTouchEnd(e.targetTouches[0].clientX);
-  };
+  }, []);
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     e.stopPropagation();
-    if (!touchStart || !touchEnd) return;
+    if (!touchStart || !touchEnd) {
+      handleInteractionEnd();
+      return;
+    }
 
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > 50;
@@ -90,14 +136,20 @@ export default function ListingCard({
     if (isRightSwipe && currentImageIndex > 0) {
       setCurrentImageIndex(currentImageIndex - 1);
     }
-  };
+    
+    handleInteractionEnd();
+  }, [touchStart, touchEnd, currentImageIndex, images.length, handleInteractionEnd]);
+
+  // Show navigation buttons with more stable conditions
+  const showPrevButton = isHovered && currentImageIndex > 0;
+  const showNextButton = isHovered && currentImageIndex < images.length - 1;
 
   return (
     <Card
-      className="bg-white border-0 shadow-none rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-lg"
+      className="bg-white border-0 shadow-none rounded-xl overflow-hidden cursor-pointer group transition-all duration-200 hover:shadow-lg"
       onClick={handleCardClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div
         ref={imageRef}
@@ -107,28 +159,31 @@ export default function ListingCard({
         onTouchEnd={handleTouchEnd}
       >
         <div className="relative w-full h-full">
-          {/* Replaced <img> with <Image /> */}
-          <Image
+          <CldImage
             src={images[currentImageIndex]}
             alt={title}
-            fill // Use fill to make the image take up the parent's size
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Example sizes, adjust based on your layout
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            width={800}
+            height={800}
+            crop="fill"
+            className="object-cover transition-transform duration-200 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
         </div>
 
         {images.length > 1 && (
           <>
             <Button
               className={cn(
-                "absolute top-1/2 left-3 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-800 shadow-md border-0 transition-all duration-200 flex items-center justify-center z-20",
-                isHovered && currentImageIndex > 0
-                  ? "opacity-100 translate-x-0"
+                "absolute top-1/2 left-3 -translate-y-1/2 bg-white/95 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-800 shadow-lg border-0 transition-all duration-150 flex items-center justify-center z-30",
+                showPrevButton
+                  ? "opacity-100 translate-x-0 pointer-events-auto"
                   : "opacity-0 -translate-x-2 pointer-events-none"
               )}
               size="icon"
               onClick={handlePrevImage}
+              onMouseDown={handleInteractionStart}
+              onMouseUp={handleInteractionEnd}
+              onMouseLeave={handleInteractionEnd}
               aria-label="Previous image"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -136,13 +191,16 @@ export default function ListingCard({
 
             <Button
               className={cn(
-                "absolute top-1/2 right-3 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-800 shadow-md border-0 transition-all duration-200 flex items-center justify-center z-20",
-                isHovered && currentImageIndex < images.length - 1
-                  ? "opacity-100 translate-x-0"
+                "absolute top-1/2 right-3 -translate-y-1/2 bg-white/95 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-800 shadow-lg border-0 transition-all duration-150 flex items-center justify-center z-30",
+                showNextButton
+                  ? "opacity-100 translate-x-0 pointer-events-auto"
                   : "opacity-0 translate-x-2 pointer-events-none"
               )}
               size="icon"
               onClick={handleNextImage}
+              onMouseDown={handleInteractionStart}
+              onMouseUp={handleInteractionEnd}
+              onMouseLeave={handleInteractionEnd}
               aria-label="Next image"
             >
               <ChevronRight className="h-4 w-4" />
@@ -151,15 +209,17 @@ export default function ListingCard({
         )}
 
         {images.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-1 z-10">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-1 z-20">
             {images.map((_, index) => (
               <button
                 key={index}
                 onClick={(e) => handleDotClick(index, e)}
+                onMouseDown={handleInteractionStart}
+                onMouseUp={handleInteractionEnd}
                 className={cn(
-                  "w-2 h-2 rounded-full transition-all duration-200 border-0 cursor-pointer",
+                  "w-2 h-2 rounded-full transition-all duration-150 border-0 cursor-pointer",
                   index === currentImageIndex
-                    ? "bg-white shadow-sm"
+                    ? "bg-white shadow-sm scale-110"
                     : "bg-white/60 hover:bg-white/80"
                 )}
                 aria-label={`Go to image ${index + 1}`}
@@ -171,13 +231,15 @@ export default function ListingCard({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-3 right-3 rounded-full bg-transparent hover:bg-white/20 p-0 h-8 w-8 text-white transition-all duration-200 z-20 border-0"
+          className="absolute top-3 right-3 rounded-full bg-transparent hover:bg-white/20 p-0 h-8 w-8 text-white transition-all duration-150 z-30 border-0"
           onClick={handleLikeToggle}
+          onMouseDown={handleInteractionStart}
+          onMouseUp={handleInteractionEnd}
           aria-label="Toggle favorite"
         >
           <Heart
             className={cn(
-              "h-6 w-6 transition-all duration-200",
+              "h-6 w-6 transition-all duration-150",
               isLiked
                 ? "fill-red-500 text-red-500 scale-110"
                 : "fill-black/20 text-white hover:scale-110"
@@ -186,13 +248,13 @@ export default function ListingCard({
         </Button>
 
         {guestFavorite && (
-          <div className="absolute top-3 left-3 bg-white text-black text-xs font-medium px-2 py-1 rounded-md shadow-sm z-10">
+          <div className="absolute top-3 left-3 bg-white text-black text-xs font-medium px-2 py-1 rounded-md shadow-sm z-20">
             Guest favorite
           </div>
         )}
 
         {isNew && (
-          <div className="absolute top-3 left-3 bg-white text-black text-xs font-medium px-2 py-1 rounded-md shadow-sm z-10">
+          <div className="absolute top-3 left-3 bg-white text-black text-xs font-medium px-2 py-1 rounded-md shadow-sm z-20">
             New
           </div>
         )}

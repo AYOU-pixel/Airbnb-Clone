@@ -10,7 +10,7 @@ import {
   ChevronRight,
   Calendar as CalendarIcon,
 } from "lucide-react";
-import Image from "next/image";
+import { CldImage } from "next-cloudinary";
 import AmenitiesSection from "./AmenitiesSection";
 import LocationSection from "./LocationSection";
 import LargeDatePicker from "./LargeDatePicker";
@@ -52,22 +52,26 @@ export default function ListingContent({
       <div id="photos" className="space-y-4">
         <div className="grid grid-cols-4 grid-rows-2 gap-2 h-96 rounded-2xl overflow-hidden">
           <div className="col-span-2 row-span-2 relative group cursor-pointer">
-            <Image
+            <CldImage
               src={images[0]}
               alt={title}
-              fill
-              className="object-cover transition-transform group-hover:scale-105"
+              width={1200}
+              height={1200}
+              crop="fill"
+              className="object-cover transition-transform group-hover:scale-105 w-full h-full"
               priority
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
           </div>
           {images.slice(1, 5).map((img, index) => (
             <div key={index} className="relative group cursor-pointer rounded-lg overflow-hidden">
-              <Image
+              <CldImage
                 src={img}
                 alt={`${title} - ${index + 1}`}
-                fill
-                className="object-cover transition-transform group-hover:scale-105"
+                width={600}
+                height={600}
+                crop="fill"
+                className="object-cover transition-transform group-hover:scale-105 w-full h-full"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
             </div>
