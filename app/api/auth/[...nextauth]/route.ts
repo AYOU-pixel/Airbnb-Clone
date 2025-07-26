@@ -1,5 +1,5 @@
 // api/auth/[...nextauth]/route.ts (Fixed typo in filename and improved)
-import NextAuth, { AuthOptions } from 'next-auth';
+import { AuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -82,6 +82,8 @@ export const authOptions: AuthOptions = {
   debug: process.env.NODE_ENV === 'development',
 };
 
-const handler = NextAuth(authOptions);
+import auth from 'next-auth';
+
+const handler = auth(authOptions);
 
 export { handler as GET, handler as POST };
