@@ -23,7 +23,7 @@ import {
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   const isLoggedIn = !!session?.user;
   const userName = session?.user?.name || "";
