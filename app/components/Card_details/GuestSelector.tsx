@@ -1,15 +1,25 @@
 "use client";
-import { useState } from "react";
 
-export default function ExpandedSearchBar({ maxGuests }: { maxGuests: number }) {
-  const [guests, setGuests] = useState<number>(1);
 
+interface GuestSelectorProps {
+  maxGuests: number;
+  guestCount: number; // القيمة الحالية من المكون الأب
+  onGuestChange: (count: number) => void; // دالة التحديث من المكون الأب
+}
+
+export default function GuestSelector({ 
+  maxGuests,
+  guestCount,
+  onGuestChange 
+}: GuestSelectorProps) {
   const decreaseGuests = () => {
-    setGuests(Math.max(1, guests - 1)); 
+    const newCount = Math.max(1, guestCount - 1);
+    onGuestChange(newCount);
   };
 
   const increaseGuests = () => {
-    setGuests(Math.min(maxGuests, guests + 1));
+    const newCount = Math.min(maxGuests, guestCount + 1);
+    onGuestChange(newCount);
   };
 
   return (
@@ -17,7 +27,7 @@ export default function ExpandedSearchBar({ maxGuests }: { maxGuests: number }) 
       <div>
         <div className="text-sm font-medium text-gray-900">Guests</div>
         <div className="text-sm text-gray-500">
-          {guests} {guests === 1 ? "guest" : "guests"}
+          {guestCount} {guestCount === 1 ? "guest" : "guests"}
         </div>
       </div>
 
@@ -25,19 +35,19 @@ export default function ExpandedSearchBar({ maxGuests }: { maxGuests: number }) 
         <button
           onClick={decreaseGuests}
           className={`w-8 h-8 rounded-full border flex items-center justify-center text-gray-700 transition hover:bg-gray-100 ${
-            guests <= 1 ? "opacity-30 cursor-not-allowed" : "border-gray-400"
+            guestCount <= 1 ? "opacity-30 cursor-not-allowed" : "border-gray-400"
           }`}
-          disabled={guests <= 1}
+          disabled={guestCount <= 1}
         >
           −
         </button>
-        <span className="w-6 text-center text-sm">{guests}</span>
+        <span className="w-6 text-center text-sm">{guestCount}</span>
         <button
           onClick={increaseGuests}
           className={`w-8 h-8 rounded-full border flex items-center justify-center text-gray-700 transition hover:bg-gray-100 ${
-            guests >= maxGuests ? "opacity-30 cursor-not-allowed" : "border-gray-400"
+            guestCount >= maxGuests ? "opacity-30 cursor-not-allowed" : "border-gray-400"
           }`}
-          disabled={guests >= maxGuests}
+          disabled={guestCount >= maxGuests}
         >
           +
         </button>

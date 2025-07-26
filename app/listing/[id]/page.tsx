@@ -1,3 +1,5 @@
+
+// listing/id/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,6 +20,7 @@ export default function ListingDetailPage() {
   const [checkOutDate, setCheckOutDate] = useState<Date | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [listing, setListing] = useState<Listing | null>(null);
+  const [guestCount, setGuestCount] = useState(1);
 
   // Extract and validate listing ID
   const listingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
@@ -66,6 +69,10 @@ export default function ListingDetailPage() {
     setCheckOutDate(date);
   };
 
+  const handleGuestChange = (count: number) => {
+    setGuestCount(count);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <ListingHeader
@@ -104,8 +111,11 @@ export default function ListingDetailPage() {
                 maxGuests={listing.guests}
                 checkInDate={checkInDate}
                 checkOutDate={checkOutDate}
+                guestCount={guestCount}
                 onCheckInSelect={handleCheckInSelect}
                 onCheckOutSelect={handleCheckOutSelect}
+                onGuestChange={handleGuestChange}
+                listingId={listing.id}
               />
               <ReviewsSummary
                 rating={listing.rating}
@@ -162,3 +172,5 @@ function ListingNotFound({ onGoHome }: { onGoHome: () => void }) {
     </div>
   );
 }
+
+

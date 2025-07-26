@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/app/components/Navbar/Navbar";
 import { AirbnbFooter } from "@/app/components/footer/Footer";
+import { Providers } from "./providers"; // استيراد الملف الجديد
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -17,14 +19,13 @@ const geistMono = Geist_Mono({
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
-})
-
+});
 
 export const metadata: Metadata = {
-  title: "Airbnb ",
-  description: "Airbnb clone ",
-   icons: {
-    icon: "/images/airbnb.png", 
+  title: "Airbnb",
+  description: "Airbnb clone",
+  icons: {
+    icon: "/images/airbnb.png",
   },
 };
 
@@ -38,13 +39,13 @@ export default function RootLayout({
       <body
         className={`${nunito.className} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Navbar />
-        <div className="min-h-screen flex flex-col">
-          <div className="flex-1">
-            {children}
+        <Providers> {/* لف التطبيق بالـ Provider */}
+          <Navbar />
+          <div className="min-h-screen flex flex-col">
+            <div className="flex-1">{children}</div>
+            <AirbnbFooter />
           </div>
-          <AirbnbFooter />
-        </div>
+        </Providers>
       </body>
     </html>
   );

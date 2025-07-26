@@ -1,7 +1,8 @@
+// UserMenu.tsx
 "use client";
-
 import { useState } from "react";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,39 +20,37 @@ import {
   HelpCircle,
   LogOut,
 } from "lucide-react";
-import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useCurrentUser();
+  const { data: session, status } = useSession();
 
-  const isLoggedIn = !!user;
-  const userName = user?.name || "";
+  const isLoggedIn = !!session?.user;
+  const userName = session?.user?.name || "";
 
   const handleLogout = async () => {
-    await fetch("/api/logout", { method: "POST" });
-    window.location.reload(); // يعيد تحميل الصفحة بدون التوكن
+    await signOut({ callbackUrl: "/" });
   };
 
   return (
     <div className="flex items-center gap-1 sm:gap-2">
-      {/* زر المضيف */}
+      {/* Host Button */}
       <button className="hidden md:block text-xs sm:text-sm font-medium hover:bg-gray-100 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full transition-colors whitespace-nowrap">
         Become a host
       </button>
 
-      {/* تغيير اللغة */}
+      {/* Language Switcher */}
       <button className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors">
         <Globe className="h-3 w-3 sm:h-4 sm:w-4" />
       </button>
 
-      {/* القائمة المنسدلة */}
+      {/* Dropdown Menu */}
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger className="flex items-center gap-1 sm:gap-2 border border-gray-300 rounded-full px-1.5 sm:px-2 py-1 hover:shadow-md transition-shadow">
           <Menu className="w-3 h-3 sm:w-4 sm:h-4" />
           <Avatar className="w-5 h-5 sm:w-6 sm:h-6">
             <AvatarFallback className="bg-gray-500 text-white text-xs sm:text-sm">
-              {isLoggedIn ? userName.charAt(0).toUpperCase() : (
+              {isLoggedIn && userName ? userName.charAt(0).toUpperCase() : (
                 <User className="w-3 h-3" />
               )}
             </AvatarFallback>
@@ -61,12 +60,12 @@ export function UserMenu() {
         <DropdownMenuContent align="end" className="mt-2 w-48 sm:w-56">
           {!isLoggedIn ? (
             <>
-              <Link href="/login">
+              <Link href="/signin">
                 <DropdownMenuItem className="font-medium cursor-pointer text-sm">
                   Log in
                 </DropdownMenuItem>
               </Link>
-              <Link href="/register">
+              <Link href="/signup">
                 <DropdownMenuItem className="cursor-pointer text-sm">
                   Sign up
                 </DropdownMenuItem>

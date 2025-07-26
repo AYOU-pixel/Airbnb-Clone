@@ -1,35 +1,48 @@
+// signup/page.tsx
 "use client";
-
 import { useState } from "react";
+import { signIn, getSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
+import Link from "next/link";
 
-export default function LoginPage() {
+export default function SignInPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setMessage("");
 
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setMessage(`❌ ${data.message || "Login failed."}`);
+      if (result?.error) {
+        setMessage("❌ Invalid credentials");
       } else {
         setMessage("✅ Login successful!");
-        // 👉 هنا ممكن تعمل redirect أو حفظ الجلسة لاحقًا
+        // Get the updated session to ensure user data is available
+        await getSession();
+        router.push(callbackUrl);
+        router.refresh();
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      setMessage("❌ Error logging in.");
+    } catch (error) {
+      console.error("Sign in error:", error);
+      setMessage("❌ Error logging in");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,11 +57,12 @@ export default function LoginPage() {
           <div className="mb-4">
             <Input
               id="email"
-              type="text"
-              placeholder="Email or Phone number"
+              type="email"
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
           <div className="mb-6">
@@ -59,6 +73,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
 
@@ -74,13 +89,24 @@ export default function LoginPage() {
 
           <Button
             type="submit"
-            className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-md font-semibold"
+            className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-md font-semibold disabled:opacity-50"
+            disabled={loading}
           >
-            Continue
+            {loading ? "Signing in..." : "Continue"}
           </Button>
         </form>
 
-        {/* باقي التصميم بدون تغيير */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/signup"
+              className="text-red-500 hover:text-red-600 font-medium"
+            >
+              Sign up
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

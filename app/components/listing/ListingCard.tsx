@@ -1,5 +1,5 @@
+// app/listing/ListingCard.tsx
 "use client";
-
 import React, { useState, useRef, useCallback } from "react";
 import { Heart, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Card, CardContent } from "@/app/components/ui/card";

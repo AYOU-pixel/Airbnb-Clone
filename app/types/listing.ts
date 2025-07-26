@@ -24,3 +24,17 @@ export type UserType = {
   name: string;
   email: string;
 };
+
+
+// types/next-auth.d.ts
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string; // Add id to the user object
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+}
+

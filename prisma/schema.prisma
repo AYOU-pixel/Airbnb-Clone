@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?       @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  accounts      Account[]
+  sessions      Session[]
+  reservations  Reservation[]
+  createdAt     DateTime      @default(now())
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Listing {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  description   String
+  price         Float
+  maxGuests     Int           @default(1)
+  reservations  Reservation[]
+  createdAt     DateTime      @default(now())
+  location      String        // إضافة حقل location
+  images        String[]      // إضافة حقل images كمصفوفة من السلاسل
+  rating        Float?        // إضافة حقل rating (اختياري إذا كان يمكن أن يكون null)
+  distance      String?       // إضافة حقل distance (اختياري)
+  dateRange     String?       // إضافة حقل dateRange (اختياري)
+  isNew         Boolean       // إضافة حقل isNew
+  guestFavorite Boolean       // إضافة حقل guestFavorite
+  bedrooms      Int           // إضافة حقل bedrooms
+  bathrooms     Float         // إضافة حقل bathrooms (Float لدعم 1.5، إلخ)
+  amenities     String[]      // إضافة حقل amenities كمصفوفة من السلاسل
+  reviews       Int           // إضافة حقل reviews
+  host          String        // إضافة حقل host
+}
+
+model Reservation {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  listing     Listing   @relation(fields: [listingId], references: [id])
+  listingId   String    @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String    @db.ObjectId
+  startDate   DateTime
+  endDate     DateTime
+  guestCount  Int       @default(1)
+  totalPrice  Float
+  createdAt   DateTime  @default(now())
+}
+
+
+
