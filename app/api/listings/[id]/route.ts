@@ -2,13 +2,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// إزالة interface Params المنفصل واستخدام النوع المباشر
+// في Next.js 15, المعامل الثاني يجب أن يكون Promise
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } } // تصحيح النوع هنا
+  { params }: { params: Promise<{ id: string }> } // تغيير مهم: params الآن Promise
 ) {
   try {
-    const { id } = context.params; // استخدام context.params بدلاً من params مباشرة
+    // الآن نحتاج إلى await params
+    const { id } = await params;
     
     console.log('🔵 Fetching listing with ID:', id);
     
