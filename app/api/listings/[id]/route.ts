@@ -2,19 +2,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-interface Params {
-  id: string;
-}
-
+// إزالة interface Params المنفصل واستخدام النوع المباشر
 export async function GET(
   request: NextRequest,
-  { params }: { params: Params }
+  context: { params: { id: string } } // تصحيح النوع هنا
 ) {
   try {
-    const { id } = params;
-
+    const { id } = context.params; // استخدام context.params بدلاً من params مباشرة
+    
     console.log('🔵 Fetching listing with ID:', id);
-
+    
     // Validate that ID is provided
     if (!id) {
       console.log('❌ No ID provided');
@@ -51,7 +48,7 @@ export async function GET(
     }
 
     console.log('✅ Successfully found listing:', listing.title);
-
+    
     // Process the listing data to ensure all required fields are present
     const processedListing = {
       id: listing.id,
@@ -73,11 +70,11 @@ export async function GET(
       maxGuests: listing.maxGuests,
       createdAt: listing.createdAt.toISOString()
     };
-
+    
     return NextResponse.json(processedListing, { status: 200 });
   } catch (error) {
     console.error('❌ Fetch Single Listing Error:', error);
-
+    
     // Handle Prisma-specific errors
     if (error instanceof Error) {
       if (error.message.includes('Invalid ObjectId')) {
@@ -87,7 +84,7 @@ export async function GET(
         );
       }
     }
-
+    
     return NextResponse.json(
       {
         error: 'Internal Server Error',
