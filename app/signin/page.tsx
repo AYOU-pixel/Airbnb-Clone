@@ -1,13 +1,12 @@
-// signup/page.tsx
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import Link from "next/link";
 
-export default function SignInPage() {
+function SignInForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +32,6 @@ export default function SignInPage() {
         setMessage("❌ Invalid credentials");
       } else {
         setMessage("✅ Login successful!");
-        // Get the updated session to ensure user data is available
         await getSession();
         router.push(callbackUrl);
         router.refresh();
@@ -109,5 +107,13 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="text-center mt-10">Loading...</div>}>
+      <SignInForm />
+    </Suspense>
   );
 }
