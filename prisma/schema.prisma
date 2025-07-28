@@ -64,18 +64,18 @@ model Listing {
   maxGuests     Int           @default(1)
   reservations  Reservation[]
   createdAt     DateTime      @default(now())
-  location      String        // إضافة حقل location
-  images        String[]      // إضافة حقل images كمصفوفة من السلاسل
-  rating        Float?        // إضافة حقل rating (اختياري إذا كان يمكن أن يكون null)
-  distance      String?       // إضافة حقل distance (اختياري)
-  dateRange     String?       // إضافة حقل dateRange (اختياري)
-  isNew         Boolean       // إضافة حقل isNew
-  guestFavorite Boolean       // إضافة حقل guestFavorite
-  bedrooms      Int           // إضافة حقل bedrooms
-  bathrooms     Float         // إضافة حقل bathrooms (Float لدعم 1.5، إلخ)
-  amenities     String[]      // إضافة حقل amenities كمصفوفة من السلاسل
-  reviews       Int           // إضافة حقل reviews
-  host          String        // إضافة حقل host
+  location      String
+  images        String[]
+  rating        Float?
+  distance      String?
+  dateRange     String?
+  isNew         Boolean
+  guestFavorite Boolean
+  bedrooms      Int
+  bathrooms     Float
+  amenities     String[]
+  reviews       Int
+  host          String
 }
 
 model Reservation {

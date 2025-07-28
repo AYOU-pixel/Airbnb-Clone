@@ -1,4 +1,4 @@
-// app/listing/ListingCard.tsx
+// app/components/listing/ListingCard.tsx
 "use client";
 import React, { useState, useRef, useCallback } from "react";
 import { Heart, ChevronLeft, ChevronRight, Star } from "lucide-react";
@@ -100,6 +100,7 @@ export default function ListingCard({
 
   const handleCardClick = useCallback(() => {
     if (!isInteracting) {
+      console.log(`🔵 Navigating to listing: ${id}`); // Debug log
       router.push(`/listing/${id}`);
     }
   }, [router, id, isInteracting]);
@@ -144,6 +145,9 @@ export default function ListingCard({
   const showPrevButton = isHovered && currentImageIndex > 0;
   const showNextButton = isHovered && currentImageIndex < images.length - 1;
 
+  // Ensure we have valid images array
+  const validImages = images && images.length > 0 ? images : ['placeholder-image.jpg'];
+
   return (
     <Card
       className="bg-white border-0 shadow-none rounded-xl overflow-hidden cursor-pointer group transition-all duration-200 hover:shadow-lg"
@@ -160,7 +164,7 @@ export default function ListingCard({
       >
         <div className="relative w-full h-full">
           <CldImage
-            src={images[currentImageIndex]}
+            src={validImages[currentImageIndex]}
             alt={title}
             width={800}
             height={800}
@@ -170,7 +174,7 @@ export default function ListingCard({
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
         </div>
 
-        {images.length > 1 && (
+        {validImages.length > 1 && (
           <>
             <Button
               className={cn(
@@ -208,9 +212,9 @@ export default function ListingCard({
           </>
         )}
 
-        {images.length > 1 && (
+        {validImages.length > 1 && (
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-1 z-20">
-            {images.map((_, index) => (
+            {validImages.map((_, index) => (
               <button
                 key={index}
                 onClick={(e) => handleDotClick(index, e)}

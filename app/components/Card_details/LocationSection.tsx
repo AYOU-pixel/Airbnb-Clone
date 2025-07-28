@@ -1,3 +1,4 @@
+// location.tsx
 import { MapPin, ChevronRight } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import Map from "./Map";

@@ -11,9 +11,9 @@ import {
   Calendar as CalendarIcon,
 } from "lucide-react";
 import { CldImage } from "next-cloudinary";
-import AmenitiesSection from "./AmenitiesSection";
-import LocationSection from "./LocationSection";
-import LargeDatePicker from "./LargeDatePicker";
+import AmenitiesSection from "@/app/components/Card_details/AmenitiesSection";
+import LocationSection from "@/app/components/Card_details/LocationSection";
+import LargeDatePicker from "@/app/components/Card_details/LargeDatePicker";
 
 interface ListingContentProps {
   images: string[];

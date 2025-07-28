@@ -6,8 +6,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
-import DatePickerSection from "./DatePickerSection";
-import GuestSelector from "./GuestSelector";
+import DatePickerSection from "./Card_details/DatePickerSection";
+import GuestSelector from "./Card_details/GuestSelector";
 
 interface BookingCardProps {
   listingId: string;
