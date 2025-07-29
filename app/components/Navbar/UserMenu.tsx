@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Avatar } from "@/app/components/ui/avatar";
 import {
   Menu,
   Globe,
@@ -27,6 +27,7 @@ export function UserMenu() {
 
   const isLoggedIn = !!session?.user;
   const userName = session?.user?.name || "";
+  const userImage = session?.user?.image || "";
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
@@ -49,11 +50,21 @@ export function UserMenu() {
         <DropdownMenuTrigger className="flex items-center gap-1 sm:gap-2 border border-gray-300 rounded-full px-1.5 sm:px-2 py-1 hover:shadow-md transition-shadow">
           <Menu className="w-3 h-3 sm:w-4 sm:h-4" />
           <Avatar className="w-5 h-5 sm:w-6 sm:h-6">
-            <AvatarFallback className="bg-gray-500 text-white text-xs sm:text-sm">
-              {isLoggedIn && userName ? userName.charAt(0).toUpperCase() : (
-                <User className="w-3 h-3" />
-              )}
-            </AvatarFallback>
+            {userImage ? (
+              <img
+                src={userImage}
+                alt={userName}
+                className="rounded-full w-full h-full object-cover"
+              />
+            ) : (
+              <img
+                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  userName || "User"
+                )}&background=random&color=fff&size=64`}
+                alt={userName}
+                className="rounded-full w-full h-full object-cover"
+              />
+            )}
           </Avatar>
         </DropdownMenuTrigger>
 

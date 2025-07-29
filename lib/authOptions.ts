@@ -1,14 +1,24 @@
-// lib/authOptions.ts
+// ✅ lib/authOptions.ts (after modification to support Google and GitHub)
 
 import { AuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
+import GitHubProvider from 'next-auth/providers/github';
 import bcrypt from 'bcryptjs';
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    }),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -16,31 +26,18 @@ export const authOptions: AuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          console.log('❌ Missing credentials');
-          return null;
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
 
-        if (!user || !user.password) {
-          console.log('❌ User not found or password missing');
-          return null;
-        }
+        if (!user || !user.password) return null;
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) {
-          console.log('❌ Invalid password');
-          return null;
-        }
+        if (!isValid) return null;
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        };
+        return { id: user.id, name: user.name, email: user.email };
       },
     }),
   ],
@@ -68,3 +65,4 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
 };
+

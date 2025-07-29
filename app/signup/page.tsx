@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import Link from "next/link";
+import { signIn } from "next-auth/react"; // أضف هذا
 
 export default function SignUpPage() {
   const [firstName, setFirstName] = useState("");
@@ -170,11 +171,21 @@ export default function SignUpPage() {
         </div>
 
         <div className="space-y-3">
-          <Button variant="outline" className="w-full flex items-center justify-center gap-2" disabled>
-            <img src="/images/facebook.png" alt="Facebook" className="w-5 h-5" />
-            <span>Continue with Facebook</span>
+          <Button
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2"
+            onClick={() => signIn("github")}
+            disabled={loading}
+          >
+            <img src="/images/github.png" alt="GitHub" className="w-5 h-5" />
+            <span>Continue with GitHub</span>
           </Button>
-          <Button variant="outline" className="w-full flex items-center justify-center gap-2" disabled>
+          <Button
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2"
+            onClick={() => signIn("google")}
+            disabled={loading}
+          >
             <img src="/images/google.png" alt="Google" className="w-5 h-5" />
             <span>Continue with Google</span>
           </Button>

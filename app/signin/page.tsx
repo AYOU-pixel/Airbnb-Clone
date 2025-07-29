@@ -1,3 +1,4 @@
+//signin/page.tsx
 "use client";
 import { useState, Suspense } from "react";
 import { signIn, getSession } from "next-auth/react";
@@ -5,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import Link from "next/link";
+
 
 function SignInForm() {
   const searchParams = useSearchParams();
@@ -93,6 +95,32 @@ function SignInForm() {
             {loading ? "Signing in..." : "Continue"}
           </Button>
         </form>
+
+        <div className="relative flex items-center justify-center my-6">
+          <span className="absolute bg-white px-2 text-gray-500 text-sm">or</span>
+          <div className="w-full border-t border-gray-200"></div>
+        </div>
+
+        <div className="space-y-3">
+          <Button
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2"
+            onClick={() => signIn("github")}
+            disabled={loading}
+          >
+            <img src="/images/github.png" alt="GitHub" className="w-5 h-5" />
+            <span>Continue with GitHub</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2"
+            onClick={() => signIn("google")}
+            disabled={loading}
+          >
+            <img src="/images/google.png" alt="Google" className="w-5 h-5" />
+            <span>Continue with Google</span>
+          </Button>
+        </div>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
