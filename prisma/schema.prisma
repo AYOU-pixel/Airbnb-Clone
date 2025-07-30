@@ -45,6 +45,7 @@ model User {
   sessions      Session[]
   reservations  Reservation[]
   createdAt     DateTime      @default(now())
+  wishlist      Wishlist[]    // ← Added relation to Wishlist
 }
 
 model VerificationToken {
@@ -76,6 +77,7 @@ model Listing {
   amenities     String[]
   reviews       Int
   host          String
+  wishlist      Wishlist[]    // ← المفرد ليتطابق مع User model
 }
 
 model Reservation {
@@ -90,6 +92,19 @@ model Reservation {
   totalPrice  Float
   createdAt   DateTime  @default(now())
 }
+
+model Wishlist {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  listingId String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+}
+
 
 
 

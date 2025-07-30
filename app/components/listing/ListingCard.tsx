@@ -1,12 +1,13 @@
 // app/components/listing/ListingCard.tsx
 "use client";
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Heart, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { CldImage } from "next-cloudinary";
+import { useSession } from "next-auth/react";
 
 type Props = {
   id: string;
@@ -14,11 +15,12 @@ type Props = {
   location: string;
   images: string[];
   price: string;
-  rating?: number;
-  distance?: string;
-  dateRange?: string;
+  rating?: number | null; // Allow null to match Prisma schema
+  distance?: string | null; // Allow null to match Prisma schema
+  dateRange?: string | null; // Allow null to match Prisma schema
   isNew?: boolean;
   guestFavorite?: boolean;
+  isInWishlist?: boolean;
 };
 
 export default function ListingCard({
@@ -32,18 +34,54 @@ export default function ListingCard({
   dateRange,
   isNew = false,
   guestFavorite = false,
+  isInWishlist = false,
 }: Props) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(isInWishlist);
   const [isHovered, setIsHovered] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const imageRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
+  const { data: session } = useSession();
 
-  // Stabilize hover state with debouncing
+  // Memoize valid images to prevent recalculation
+  const validImages = useMemo(() => {
+    return images && images.length > 0 ? images : ['placeholder-image.jpg'];
+  }, [images]);
+
+  // Update isLiked when prop changes
+  useEffect(() => {
+    setIsLiked(isInWishlist);
+  }, [isInWishlist]);
+
+  // Fetch wishlist status on component mount (only if isInWishlist is not provided)
+  useEffect(() => {
+    if (session?.user?.email && !isInWishlist) {
+      checkWishlistStatus();
+    }
+  }, [session, id, isInWishlist]);
+
+  const checkWishlistStatus = async () => {
+    try {
+      const response = await fetch("/api/wishlist/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: id }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsLiked(data.isInWishlist);
+      }
+    } catch (error) {
+      console.error("Failed to check wishlist status:", error);
+    }
+  };
+
   const handleMouseEnter = useCallback(() => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -55,11 +93,10 @@ export default function ListingCard({
     if (!isInteracting) {
       hoverTimeoutRef.current = setTimeout(() => {
         setIsHovered(false);
-      }, 100);
+      }, 50);
     }
   }, [isInteracting]);
 
-  // Prevent hover state from changing during interaction
   const handleInteractionStart = useCallback(() => {
     setIsInteracting(true);
     if (hoverTimeoutRef.current) {
@@ -69,38 +106,66 @@ export default function ListingCard({
 
   const handleInteractionEnd = useCallback(() => {
     setIsInteracting(false);
-    // Small delay to prevent flicker
-    setTimeout(() => {
-      if (!isHovered) {
-        setIsHovered(false);
-      }
-    }, 50);
+    if (!isHovered) {
+      setIsHovered(false);
+    }
   }, [isHovered]);
 
   const handleNextImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-  }, [images.length]);
+    setCurrentImageIndex((prevIndex) => {
+      const nextIndex = (prevIndex + 1) % validImages.length;
+      return nextIndex;
+    });
+  }, [validImages.length]);
 
   const handlePrevImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setCurrentImageIndex(
-      (prevIndex) => (prevIndex - 1 + images.length) % images.length
-    );
-  }, [images.length]);
+    setCurrentImageIndex((prevIndex) => {
+      const nextIndex = (prevIndex - 1 + validImages.length) % validImages.length;
+      return nextIndex;
+    });
+  }, [validImages.length]);
 
-  const handleLikeToggle = useCallback((e: React.MouseEvent) => {
+  const handleLikeToggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setIsLiked(!isLiked);
-    console.log(`Toggled like for ${title}: ${!isLiked}`);
-  }, [isLiked, title]);
+
+    if (!session?.user?.email) {
+      router.push('/signin');
+      return;
+    }
+
+    if (isLoading) return;
+
+    const newIsLiked = !isLiked;
+    setIsLiked(newIsLiked);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/wishlist/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: id }),
+      });
+
+      if (!response.ok) {
+        setIsLiked(!newIsLiked);
+        console.error("Failed to toggle wishlist");
+      }
+    } catch (err) {
+      setIsLiked(!newIsLiked);
+      console.error("❌ Failed to toggle wishlist", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, isLiked, isLoading, session, router]);
 
   const handleCardClick = useCallback(() => {
     if (!isInteracting) {
-      console.log(`🔵 Navigating to listing: ${id}`); // Debug log
+      console.log(`🔵 Navigating to listing: ${id}`);
       router.push(`/listing/${id}`);
     }
   }, [router, id, isInteracting]);
@@ -112,45 +177,58 @@ export default function ListingCard({
   }, []);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
-    handleInteractionStart();
+    const touch = e.targetTouches[0];
+    if (touch) {
+      setTouchStart(touch.clientX);
+      setTouchEnd(null);
+      handleInteractionStart();
+    }
   }, [handleInteractionStart]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    const touch = e.targetTouches[0];
+    if (touch) {
+      setTouchEnd(touch.clientX);
+    }
   }, []);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     e.stopPropagation();
-    if (!touchStart || !touchEnd) {
+    
+    if (touchStart === null || touchEnd === null) {
       handleInteractionEnd();
       return;
     }
 
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
+    const minSwipeDistance = 30;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
 
-    if (isLeftSwipe && currentImageIndex < images.length - 1) {
-      setCurrentImageIndex(currentImageIndex + 1);
-    }
-    if (isRightSwipe && currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
+    if (isLeftSwipe && currentImageIndex < validImages.length - 1) {
+      setCurrentImageIndex(prev => prev + 1);
+    } else if (isRightSwipe && currentImageIndex > 0) {
+      setCurrentImageIndex(prev => prev - 1);
     }
     
+    setTouchStart(null);
+    setTouchEnd(null);
     handleInteractionEnd();
-  }, [touchStart, touchEnd, currentImageIndex, images.length, handleInteractionEnd]);
+  }, [touchStart, touchEnd, currentImageIndex, validImages.length, handleInteractionEnd]);
 
-  // Show navigation buttons with more stable conditions
-  const showPrevButton = isHovered && currentImageIndex > 0;
-  const showNextButton = isHovered && currentImageIndex < images.length - 1;
-
-  // Ensure we have valid images array
-  const validImages = images && images.length > 0 ? images : ['placeholder-image.jpg'];
+  const showPrevButton = useMemo(() => 
+    isHovered && currentImageIndex > 0, 
+    [isHovered, currentImageIndex]
+  );
+  
+  const showNextButton = useMemo(() => 
+    isHovered && currentImageIndex < validImages.length - 1, 
+    [isHovered, currentImageIndex, validImages.length]
+  );
 
   return (
     <Card
-      className="bg-white border-0 shadow-none rounded-xl overflow-hidden cursor-pointer group transition-all duration-200 hover:shadow-lg"
+      className="bg-white border-0 shadow-none rounded-xl overflow-hidden cursor-pointer group transition-all duration-150 hover:shadow-lg"
       onClick={handleCardClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -166,19 +244,21 @@ export default function ListingCard({
           <CldImage
             src={validImages[currentImageIndex]}
             alt={title}
-            width={800}
-            height={800}
+            width={400}
+            height={400}
             crop="fill"
-            className="object-cover transition-transform duration-200 group-hover:scale-105"
+            quality="auto"
+            loading="lazy"
+            className="object-cover transition-transform duration-150 group-hover:scale-105 will-change-transform"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
         </div>
 
         {validImages.length > 1 && (
           <>
             <Button
               className={cn(
-                "absolute top-1/2 left-3 -translate-y-1/2 bg-white/95 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-800 shadow-lg border-0 transition-all duration-150 flex items-center justify-center z-30",
+                "absolute top-1/2 left-3 -translate-y-1/2 bg-white/95 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-800 shadow-lg border-0 transition-all duration-100 flex items-center justify-center z-30 will-change-transform",
                 showPrevButton
                   ? "opacity-100 translate-x-0 pointer-events-auto"
                   : "opacity-0 -translate-x-2 pointer-events-none"
@@ -188,6 +268,8 @@ export default function ListingCard({
               onMouseDown={handleInteractionStart}
               onMouseUp={handleInteractionEnd}
               onMouseLeave={handleInteractionEnd}
+              onTouchStart={handleInteractionStart}
+              onTouchEnd={handleInteractionEnd}
               aria-label="Previous image"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -195,7 +277,7 @@ export default function ListingCard({
 
             <Button
               className={cn(
-                "absolute top-1/2 right-3 -translate-y-1/2 bg-white/95 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-800 shadow-lg border-0 transition-all duration-150 flex items-center justify-center z-30",
+                "absolute top-1/2 right-3 -translate-y-1/2 bg-white/95 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-800 shadow-lg border-0 transition-all duration-100 flex items-center justify-center z-30 will-change-transform",
                 showNextButton
                   ? "opacity-100 translate-x-0 pointer-events-auto"
                   : "opacity-0 translate-x-2 pointer-events-none"
@@ -205,6 +287,8 @@ export default function ListingCard({
               onMouseDown={handleInteractionStart}
               onMouseUp={handleInteractionEnd}
               onMouseLeave={handleInteractionEnd}
+              onTouchStart={handleInteractionStart}
+              onTouchEnd={handleInteractionEnd}
               aria-label="Next image"
             >
               <ChevronRight className="h-4 w-4" />
@@ -220,11 +304,13 @@ export default function ListingCard({
                 onClick={(e) => handleDotClick(index, e)}
                 onMouseDown={handleInteractionStart}
                 onMouseUp={handleInteractionEnd}
+                onTouchStart={handleInteractionStart}
+                onTouchEnd={handleInteractionEnd}
                 className={cn(
-                  "w-2 h-2 rounded-full transition-all duration-150 border-0 cursor-pointer",
+                  "w-2 h-2 rounded-full transition-all duration-100 border-0 cursor-pointer will-change-transform",
                   index === currentImageIndex
                     ? "bg-white shadow-sm scale-110"
-                    : "bg-white/60 hover:bg-white/80"
+                    : "bg-white/60 hover:bg-white/80 active:bg-white/90"
                 )}
                 aria-label={`Go to image ${index + 1}`}
               />
@@ -235,18 +321,22 @@ export default function ListingCard({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-3 right-3 rounded-full bg-transparent hover:bg-white/20 p-0 h-8 w-8 text-white transition-all duration-150 z-30 border-0"
+          className="absolute top-3 right-3 rounded-full bg-transparent hover:bg-white/20 active:bg-white/30 p-0 h-8 w-8 text-white transition-all duration-100 z-30 border-0 will-change-transform"
           onClick={handleLikeToggle}
           onMouseDown={handleInteractionStart}
           onMouseUp={handleInteractionEnd}
+          onTouchStart={handleInteractionStart}
+          onTouchEnd={handleInteractionEnd}
           aria-label="Toggle favorite"
+          disabled={isLoading}
         >
           <Heart
             className={cn(
-              "h-6 w-6 transition-all duration-150",
+              "h-6 w-6 transition-all duration-100 will-change-transform",
               isLiked
                 ? "fill-red-500 text-red-500 scale-110"
-                : "fill-black/20 text-white hover:scale-110"
+                : "fill-black/20 text-white hover:scale-110",
+              isLoading && "opacity-50"
             )}
           />
         </Button>
@@ -270,7 +360,7 @@ export default function ListingCard({
             <h3 className="font-medium text-gray-900 text-base leading-tight pr-2 truncate">
               {title}
             </h3>
-            {rating && (
+            {rating != null && ( // Check for null explicitly
               <div className="flex items-center text-sm font-medium text-gray-900 flex-shrink-0">
                 <Star className="w-3 h-3 fill-current mr-1" />
                 {rating.toFixed(1)}
@@ -278,13 +368,13 @@ export default function ListingCard({
             )}
           </div>
 
-          {distance && (
+          {distance != null && ( // Check for null explicitly
             <p className="text-sm text-gray-500 leading-tight">{distance}</p>
           )}
 
           <p className="text-sm text-gray-500 leading-tight">{location}</p>
 
-          {dateRange && (
+          {dateRange != null && ( // Check for null explicitly
             <p className="text-sm text-gray-500 leading-tight">{dateRange}</p>
           )}
 
