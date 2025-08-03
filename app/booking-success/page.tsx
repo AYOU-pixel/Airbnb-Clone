@@ -1,11 +1,11 @@
-// app/booking-success/page.tsx
 "use client";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { useSession } from "next-auth/react";
 import { CheckCircle, Calendar, MapPin, Users, CreditCard } from "lucide-react";
+import { Suspense } from 'react';
 
 interface ReservationDetails {
   id: string;
@@ -23,35 +23,38 @@ interface ReservationDetails {
   };
 }
 
-export default function BookingSuccessPage() {
+function BookingSuccessContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
   const [reservation, setReservation] = useState<ReservationDetails | null>(null);
   const [error, setError] = useState("");
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === "loading") return;
+    // Get session ID from URL after component mounts
+    const params = new URLSearchParams(window.location.search);
+    setSessionId(params.get('session_id'));
+  }, []);
+
+  useEffect(() => {
+    if (status === "loading" || !sessionId) return;
 
     if (!session) {
       router.push("/signin");
       return;
     }
 
-    const sessionId = searchParams.get('session_id');
     if (!sessionId) {
       setError("Invalid booking session");
       setLoading(false);
       return;
     }
 
-    // Verify the payment and get reservation details
     const verifyPayment = async () => {
       try {
         console.log('Starting payment verification for session:', sessionId);
         
-        // Wait longer for webhook to process
         await new Promise(resolve => setTimeout(resolve, 3000));
         
         const response = await fetch('/api/verify-payment', {
@@ -75,7 +78,6 @@ export default function BookingSuccessPage() {
         console.error('Payment verification error:', err);
         setError(err instanceof Error ? err.message : "Failed to verify booking");
         
-        // Try to redirect to trips page after a delay if verification fails
         setTimeout(() => {
           router.push("/trips");
         }, 5000);
@@ -85,7 +87,7 @@ export default function BookingSuccessPage() {
     };
 
     verifyPayment();
-  }, [status, session, router, searchParams]);
+  }, [status, session, router, sessionId]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -296,5 +298,13 @@ export default function BookingSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookingSuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookingSuccessContent />
+    </Suspense>
   );
 }
