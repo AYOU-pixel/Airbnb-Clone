@@ -228,7 +228,7 @@ export default function BookingSuccessPage() {
         {/* Next Steps */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">What's next?</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">What&apos;s next?</h3>
             <div className="space-y-4">
               <div className="flex items-start">
                 <div className="w-8 h-8 bg-rose-100 rounded-full flex items-center justify-center mr-3 mt-1">
@@ -237,7 +237,7 @@ export default function BookingSuccessPage() {
                 <div>
                   <h4 className="font-medium text-gray-900">Confirmation Email</h4>
                   <p className="text-gray-600 text-sm">
-                    You'll receive a confirmation email with all booking details shortly.
+                    You&apos;ll receive a confirmation email with all booking details shortly.
                   </p>
                 </div>
               </div>
