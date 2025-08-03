@@ -1,5 +1,5 @@
-// app/checkout/page.tsx
 "use client";
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -11,7 +11,7 @@ import { loadStripe } from "@stripe/stripe-js";
 // Stripe initialization
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -291,5 +291,17 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading checkout...</div>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }
