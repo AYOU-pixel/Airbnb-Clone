@@ -237,96 +237,107 @@ export default function TripsPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {reservations.map((reservation) => {
-            const nights = calculateNights(reservation.startDate, reservation.endDate);
-            
+            const nights = calculateNights(
+              reservation.startDate,
+              reservation.endDate
+            );
+
             return (
-              <Card key={reservation.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card
+                key={reservation.id}
+                className="overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 bg-white"
+              >
                 <CardContent className="p-0">
-                  <div className="aspect-w-16 aspect-h-9 bg-gray-200 relative">
-                    
-{reservation.listing.images?.[0] ? (
-  <div className="relative w-full h-48 overflow-hidden">
-    <CldImage
-      src={reservation.listing.images[0]}
-      alt={reservation.listing.title}
-      width={600}
-      height={400}
-      crop="fill"
-      className="object-cover w-full h-full"
-      quality="auto"
-      loading="lazy"
-    />
-    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
-  </div>
-) : (
-  <div className="w-full h-48 bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white text-lg font-medium">
-    {reservation.listing.title}
-  </div>
-)}
-                    <div className="absolute top-3 right-3">
-                      <div className="flex items-center px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                        <CheckCircle className="w-3 h-3 mr-1" />
+                  <div className="relative aspect-w-16 aspect-h-9">
+                    {reservation.listing.images?.[0] ? (
+                      <div className="relative w-full h-64 overflow-hidden">
+                        <CldImage
+                          src={reservation.listing.images[0]}
+                          alt={reservation.listing.title}
+                          width={600}
+                          height={400}
+                          crop="fill"
+                          className="object-cover w-full h-full transform hover:scale-105 transition-transform duration-300"
+                          quality="auto"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                      </div>
+                    ) : (
+                      <div className="w-full h-64 bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white text-lg font-medium rounded-t-2xl">
+                        {reservation.listing.title}
+                      </div>
+                    )}
+                    <div className="absolute top-4 right-4">
+                      <div className="flex items-center px-2.5 py-1 bg-white/90 text-green-800 rounded-full text-xs font-medium shadow-sm">
+                        <CheckCircle className="w-3.5 h-3.5 mr-1" />
                         Confirmed
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                  <div className="p-5">
+                    <h3 className="font-semibold text-xl text-gray-900 mb-2 truncate">
                       {reservation.listing.title}
                     </h3>
-                    
+
                     <div className="flex items-center text-gray-600 mb-3">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      <span className="text-sm">{reservation.listing.location}</span>
+                      <MapPin className="w-4 h-4 mr-1.5" />
+                      <span className="text-sm font-medium">
+                        {reservation.listing.location}
+                      </span>
                     </div>
 
-                    <div className="space-y-2 text-sm text-gray-600">
+                    <div className="space-y-2 text-sm text-gray-700">
                       <div className="flex justify-between">
-                        <span>Check-in:</span>
+                        <span className="font-medium">Check-in:</span>
                         <span>{formatDate(reservation.startDate)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Check-out:</span>
+                        <span className="font-medium">Check-out:</span>
                         <span>{formatDate(reservation.endDate)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Guests:</span>
+                        <span className="font-medium">Guests:</span>
                         <span>{reservation.guestCount}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Nights:</span>
+                        <span className="font-medium">Nights:</span>
                         <span>{nights}</span>
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-gray-200">
+                    <div className="mt-4 pt-4 border-t border-gray-200">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Total paid:</span>
-                        <span className="text-lg font-semibold text-gray-900">
+                        <span className="text-sm text-gray-600 font-medium">
+                          Total paid:
+                        </span>
+                        <span className="text-lg font-bold text-gray-900">
                           ${reservation.totalPrice.toFixed(2)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="mt-3 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-gray-500">
                       Booked on {formatDate(reservation.createdAt)}
                     </div>
 
-                    <div className="mt-4 flex space-x-2">
+                    <div className="mt-5 flex space-x-3">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/listings/${reservation.listing.id}`)}
-                        className="flex-1"
+                        onClick={() =>
+                          router.push(`/listings/${reservation.listing.id}`)
+                        }
+                        className="flex-1 rounded-full border-gray-300 hover:bg-gray-50 text-gray-700 font-medium transition-colors"
                       >
                         View Property
                       </Button>
                       <Button
                         size="sm"
-                        className="flex-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white hover:from-rose-600 hover:to-pink-600"
+                        className="flex-1 rounded-full bg-rose-500 text-white hover:bg-rose-600 font-medium transition-colors"
                       >
                         Contact Host
                       </Button>
