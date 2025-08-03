@@ -1,5 +1,6 @@
-// BookingCard.tsx - Improved with better error handling and validation
+// BookingCard.tsx - Updated to redirect to checkout
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
@@ -34,12 +35,14 @@ export default function BookingCard({
 }: BookingCardProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
-  const nights = checkInDate && checkOutDate
-    ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
+  const nights =
+    checkInDate && checkOutDate
+      ? Math.ceil(
+          (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
+        )
+      : 0;
 
   const cleaningFee = 75;
   const serviceFee = 83;
@@ -80,7 +83,7 @@ export default function BookingCard({
     return true;
   };
 
-  const handleReserve = async () => {
+  const handleReserve = () => {
     // Check authentication
     if (status === "loading") {
       return; // Wait for session to load
@@ -96,79 +99,19 @@ export default function BookingCard({
       return;
     }
 
-    setLoading(true);
-    setError("");
+    // Redirect to checkout instead of creating reservation directly
+    const query = new URLSearchParams({
+      listingId,
+      checkInDate: checkInDate!.toISOString(),
+      checkOutDate: checkOutDate!.toISOString(),
+      guestCount: guestCount.toString(),
+      totalPrice: total.toString(),
+    }).toString();
 
-    try {
-      console.log("🔵 Making reservation request...");
-      console.log("Data being sent:", {
-        listingId,
-        startDate: checkInDate!.toISOString(),
-        endDate: checkOutDate!.toISOString(),
-        guestCount: guestCount,
-        totalPrice: total,
-      });
-
-      const response = await fetch("/api/reservations", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          listingId,
-          startDate: checkInDate!.toISOString(),
-          endDate: checkOutDate!.toISOString(),
-          guestCount: guestCount,
-          totalPrice: total,
-        }),
-      });
-
-      console.log("🔵 Response status:", response.status);
-
-      let data;
-      try {
-        data = await response.json();
-        console.log("🔵 Response data:", data);
-      } catch (parseError) {
-        console.error("❌ Failed to parse response as JSON:", parseError);
-        throw new Error("Invalid server response");
-      }
-
-      if (response.ok) {
-        console.log("✅ Reservation successful!");
-        alert("Reservation created successfully!");
-        
-        // Clear form
-        onCheckInSelect(undefined);
-        onCheckOutSelect(undefined);
-        onGuestChange(1);
-        
-        // Navigate to trips page
-        router.push("/trips");
-        router.refresh();
-      } else {
-        console.error("❌ Reservation failed:", data);
-        const errorMessage = data.error || `Server error (${response.status})`;
-        setError(errorMessage);
-        
-        // Show detailed error in development
-        if (process.env.NODE_ENV === 'development' && data.details) {
-          console.error("Error details:", data.details);
-        }
-      }
-    } catch (error) {
-      console.error("❌ Network/Client Error:", error);
-      setError(
-        error instanceof Error 
-          ? `Network error: ${error.message}` 
-          : "Something went wrong. Please check your connection and try again."
-      );
-    } finally {
-      setLoading(false);
-    }
+    router.push(`/checkout?${query}`);
   };
 
-  const isDisabled = !checkInDate || !checkOutDate || loading || status === "loading";
+  const isDisabled = !checkInDate || !checkOutDate || status === "loading";
 
   return (
     <Card className="border border-gray-200 rounded-2xl shadow-md">
@@ -187,8 +130,8 @@ export default function BookingCard({
             onCheckInSelect={onCheckInSelect}
             onCheckOutSelect={onCheckOutSelect}
           />
-          <GuestSelector 
-            maxGuests={maxGuests} 
+          <GuestSelector
+            maxGuests={maxGuests}
             guestCount={guestCount}
             onGuestChange={onGuestChange}
           />
@@ -206,15 +149,19 @@ export default function BookingCard({
           size="lg"
           disabled={isDisabled}
         >
-          {loading ? "Reserving..." : status === "loading" ? "Loading..." : "Reserve"}
+          {status === "loading" ? "Loading..." : "Reserve"}
         </Button>
 
-        <p className="text-center text-sm text-gray-500">You won&apos;t be charged yet</p>
+        <p className="text-center text-sm text-gray-500">
+          You won&apos;t be charged yet
+        </p>
 
         {checkInDate && checkOutDate && nights > 0 && (
           <div className="pt-4 space-y-3 text-sm text-gray-700">
             <div className="flex justify-between">
-              <span className="underline">${price} × {nights} nights</span>
+              <span className="underline">
+                ${price} × {nights} nights
+              </span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
