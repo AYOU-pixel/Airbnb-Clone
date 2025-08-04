@@ -34,11 +34,12 @@ interface ExpandedSearchBarProps {
   checkOutDate: Date | undefined;
   setCheckOutDate: (date: Date | undefined) => void;
   guests: number;
-  setGuests: (guests: number) => void; // This setGuests expects a number
+  setGuests: (guests: number) => void;
   locationSuggestions: LocationSuggestion[];
   activeField: "where" | "checkIn" | "checkOut" | "who" | null;
   setActiveField: (field: "where" | "checkIn" | "checkOut" | "who" | null) => void;
   handleSearchSubmit: () => void;
+  isSearching?: boolean; // إضافة حالة البحث
 }
 
 export function ExpandedSearchBar({
@@ -54,6 +55,7 @@ export function ExpandedSearchBar({
   activeField,
   setActiveField,
   handleSearchSubmit,
+  isSearching = false,
 }: ExpandedSearchBarProps) {
   // Refs for keyboard navigation and focus
   const whereRef = useRef<HTMLDivElement>(null);
@@ -92,31 +94,24 @@ export function ExpandedSearchBar({
         } else if (activeField === "checkOut") {
           focusField("who");
         } else if (activeField === "who") {
-          setActiveField(null); // Optionally blur or loop back
-          // Consider what happens if 'Enter' wasn't used after tabbing out of 'who'
-          // Maybe focus the search button directly if it's the next logical step.
+          setActiveField(null);
         } else {
-            // If no field is active, perhaps focus the first field on tab press
-            focusField("where");
+          focusField("where");
         }
       } else if (e.key === "Enter") {
         if (activeField === "who") {
-            handleSearchSubmit();
+          handleSearchSubmit();
         } else if (activeField === "where" && locationSuggestions.length === 1 && destination.toLowerCase() === locationSuggestions[0].name.toLowerCase()) {
-            // If only one suggestion matches perfectly, select it and move to next field
-            setDestination(locationSuggestions[0].name);
-            focusField("checkIn");
+          setDestination(locationSuggestions[0].name);
+          focusField("checkIn");
         }
-        // For other fields, Enter might naturally close the popover and move focus
-        // if not explicitly handled by the internal components (like calendar)
       } else if (e.key === "Escape") {
-        setActiveField(null); // Close active popover/field
+        setActiveField(null);
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [activeField, focusField, handleSearchSubmit, setActiveField, destination, locationSuggestions, setDestination]);
-
 
   // Helper component for search fields
   const FieldWrapper = React.forwardRef<
@@ -132,7 +127,7 @@ export function ExpandedSearchBar({
   >(({ label, placeholder, value, isActive, className, onClick }, ref) => (
     <div
       ref={ref}
-      tabIndex={0} // Ensure all field wrappers are keyboard focusable
+      tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -140,8 +135,8 @@ export function ExpandedSearchBar({
           onClick();
         }
       }}
-      role="button" // Indicate that this div acts like a button for assistive technologies
-      aria-label={`${label} field, current value: ${value || placeholder}`} // Provide a descriptive label
+      role="button"
+      aria-label={`${label} field, current value: ${value || placeholder}`}
       className={cn(
         "flex flex-col justify-center p-3 sm:p-4 md:p-5 border-b sm:border-b-0 sm:border-r last:border-r-0 last:border-b-0 transition-all duration-300 min-w-0 flex-1 cursor-pointer",
         isActive
@@ -195,21 +190,22 @@ export function ExpandedSearchBar({
         <PopoverContent
           className="w-[280px] sm:w-[320px] p-0 shadcn-popover-content"
           align="start"
-          onOpenAutoFocus={(e) => e.preventDefault()} // Prevent shadcn from auto-focusing
+          onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <Command>
             <CommandInput
               placeholder="Search destination..."
               value={destination}
               onValueChange={setDestination}
-              autoFocus // Ensure input is focused when popover opens
+              autoFocus
             />
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup>
                 {locationSuggestions
                   .filter((loc) =>
-                    loc.name.toLowerCase().includes(destination.toLowerCase())
+                    loc.name.toLowerCase().includes(destination.toLowerCase()) ||
+                    loc.description.toLowerCase().includes(destination.toLowerCase())
                   )
                   .map((loc) => (
                     <CommandItem
@@ -220,7 +216,10 @@ export function ExpandedSearchBar({
                       }}
                       className="cursor-pointer"
                     >
-                      {loc.name}, {loc.description}
+                      <div className="flex flex-col">
+                        <span className="font-medium">{loc.name}</span>
+                        <span className="text-sm text-gray-500">{loc.description}</span>
+                      </div>
                     </CommandItem>
                   ))}
               </CommandGroup>
@@ -254,24 +253,23 @@ export function ExpandedSearchBar({
         <PopoverContent
           className="w-auto p-0 shadcn-popover-content"
           align="start"
-          onOpenAutoFocus={(e) => e.preventDefault()} // Prevent shadcn from auto-focusing
+          onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <Calendar
             mode="single"
             selected={checkInDate}
             onSelect={(date) => {
               setCheckInDate(date);
-              // If check-in date is set after current check-out date, reset check-out
               if (date && checkOutDate && date > checkOutDate) {
                 setCheckOutDate(undefined);
               }
               focusField("checkOut");
             }}
-            initialFocus // Ensure calendar gains focus when opened
+            initialFocus
             disabled={(date) => {
               const today = new Date();
-              today.setHours(0, 0, 0, 0); // Normalize today to start of day
-              return date < today; // Disable dates before today
+              today.setHours(0, 0, 0, 0);
+              return date < today;
             }}
           />
         </PopoverContent>
@@ -302,7 +300,7 @@ export function ExpandedSearchBar({
         <PopoverContent
           className="w-auto p-0 shadcn-popover-content"
           align="start"
-          onOpenAutoFocus={(e) => e.preventDefault()} // Prevent shadcn from auto-focusing
+          onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <Calendar
             mode="single"
@@ -311,19 +309,17 @@ export function ExpandedSearchBar({
               setCheckOutDate(date);
               focusField("who");
             }}
-            initialFocus // Ensure calendar gains focus when opened
+            initialFocus
             disabled={(date) => {
               const today = new Date();
-              today.setHours(0, 0, 0, 0); // Normalize today to start of day
-              // Disable dates before today
+              today.setHours(0, 0, 0, 0);
               if (date < today) return true;
-              // Disable dates before checkInDate (if checkInDate is set)
               if (checkInDate) {
                 const checkInStartOfDay = new Date(checkInDate);
                 checkInStartOfDay.setHours(0, 0, 0, 0);
-                if (date < checkInStartOfDay) return true;
+                if (date <= checkInStartOfDay) return true;
               }
-              return false; // Default to not disabled if no other conditions met
+              return false;
             }}
           />
         </PopoverContent>
@@ -345,7 +341,7 @@ export function ExpandedSearchBar({
             ref={whoRef}
             label="Who"
             placeholder="Add guests"
-            value={guests > 0 ? `${guests} guests` : ""}
+            value={guests > 0 ? `${guests} guest${guests > 1 ? 's' : ''}` : ""}
             isActive={activeField === "who"}
             onClick={() => focusField("who")}
             className="min-w-0 sm:min-w-[120px] md:min-w-[140px] sm:pr-16 md:pr-20"
@@ -354,7 +350,7 @@ export function ExpandedSearchBar({
         <PopoverContent
           className="w-[240px] sm:w-[280px] p-4 shadcn-popover-content"
           align="end"
-          onOpenAutoFocus={(e) => e.preventDefault()} // Prevent shadcn from auto-focusing
+          onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Guests</span>
@@ -364,8 +360,8 @@ export function ExpandedSearchBar({
                 size="icon"
                 className="rounded-full w-8 h-8 border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent popover from closing
-                  setGuests(Math.max(0, guests - 1)); // ✅ Apply the fix here
+                  e.stopPropagation();
+                  setGuests(Math.max(0, guests - 1));
                 }}
                 disabled={guests === 0}
               >
@@ -379,8 +375,8 @@ export function ExpandedSearchBar({
                 size="icon"
                 className="rounded-full w-8 h-8 border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent popover from closing
-                  setGuests(guests + 1); // ✅ Apply the fix here (or Math.max(0, guests + 1) if guests can be negative initially, but not in this case)
+                  e.stopPropagation();
+                  setGuests(guests + 1);
                 }}
               >
                 <Plus className="h-4 w-4" />
@@ -393,13 +389,20 @@ export function ExpandedSearchBar({
       {/* Search button */}
       <div className="flex items-center justify-center p-2 sm:p-3 relative">
         <Button
-          className="bg-rose-500 text-white p-3 sm:p-4 rounded-full hover:bg-rose-600 flex items-center justify-center min-w-[48px] min-h-[48px] sm:min-w-[56px] sm:min-h-[56px] transition-colors duration-200"
+          className="bg-rose-500 text-white p-3 sm:p-4 rounded-full hover:bg-rose-600 flex items-center justify-center min-w-[48px] min-h-[48px] sm:min-w-[56px] sm:min-h-[56px] transition-colors duration-200 disabled:opacity-50"
           onClick={handleSearchSubmit}
+          disabled={isSearching}
         >
-          <Search className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="ml-2 text-sm sm:text-base font-semibold hidden lg:inline">
-            Search
-          </span>
+          {isSearching ? (
+            <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              <Search className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="ml-2 text-sm sm:text-base font-semibold hidden lg:inline">
+                Search
+              </span>
+            </>
+          )}
         </Button>
       </div>
     </motion.div>
