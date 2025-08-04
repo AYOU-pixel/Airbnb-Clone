@@ -1,21 +1,21 @@
-// app/search/page.tsx
-"use client";
+'use client';
 
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { Filter, Grid, List, MapPin, Star, Heart } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
-import { Badge } from "@/app/components/ui/badge";
-import { Card, CardContent } from "@/app/components/ui/card";
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Filter, Grid, List, MapPin, Star, Heart } from 'lucide-react';
+import { Button } from '@/app/components/ui/button';
+import { Badge } from '@/app/components/ui/badge';
+import { Card, CardContent } from '@/app/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/app/components/ui/select";
-import { Slider } from "@/app/components/ui/slider";
+} from '@/app/components/ui/select';
+import { Slider } from '@/app/components/ui/slider';
 import {
   Sheet,
   SheetContent,
@@ -23,8 +23,8 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/app/components/ui/sheet";
-import Link from "next/link";
+} from '@/app/components/ui/sheet';
+import Link from 'next/link';
 import { CldImage } from 'next-cloudinary';
 
 interface Listing {
@@ -72,7 +72,7 @@ interface SearchResponse {
   success: boolean;
 }
 
-function SearchResultsContent() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const [listings, setListings] = useState<Listing[]>([]);
   const [stats, setStats] = useState<SearchStats | null>(null);
@@ -83,10 +83,10 @@ function SearchResultsContent() {
   const [priceRange, setPriceRange] = useState([0, 2000]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
-  // استخراج معاملات البحث
+  // Extract search parameters
   const destination = searchParams.get('destination') || '';
 
-  // قائمة الخدمات المتاحة للفلترة
+  // Available amenities for filtering
   const availableAmenities = [
     'WiFi', 'Kitchenette', 'Beach Access', 'Free Parking', 'Full Kitchen',
     'Air Conditioning', 'City View', 'Hot Tub', 'Fireplace', 'Mountain View',
@@ -100,7 +100,7 @@ function SearchResultsContent() {
     'Chef Services', 'Boat Tours', 'Spa Services'
   ];
 
-  // جلب نتائج البحث
+  // Fetch search results
   useEffect(() => {
     const fetchSearchResults = async () => {
       setLoading(true);
@@ -108,32 +108,32 @@ function SearchResultsContent() {
 
       try {
         const params = new URLSearchParams(searchParams.toString());
-        
-        // إضافة فلاتر إضافية
+
+        // Add additional filters
         if (sortBy !== 'relevance') {
           params.set('sortBy', sortBy);
         }
-        
+
         if (priceRange[0] > 0) {
           params.set('minPrice', priceRange[0].toString());
         }
-        
+
         if (priceRange[1] < 2000) {
           params.set('maxPrice', priceRange[1].toString());
         }
-        
+
         if (selectedAmenities.length > 0) {
           params.set('amenities', selectedAmenities.join(','));
         }
 
         const response = await fetch(`/api/search?${params.toString()}`);
-        
+
         if (!response.ok) {
           throw new Error(`Search failed: ${response.status}`);
         }
 
         const data: SearchResponse = await response.json();
-        
+
         setListings(data.listings);
         setStats(data.stats);
       } catch (err) {
@@ -147,16 +147,17 @@ function SearchResultsContent() {
     fetchSearchResults();
   }, [searchParams, sortBy, priceRange, selectedAmenities]);
 
-  // مكون البطاقة للقائمة
+  // Listing card component
   const ListingCard = ({ listing }: { listing: Listing }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
     >
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+      <Card className="overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow duration-300">
         <div className={viewMode === 'grid' ? '' : 'flex'}>
-          {/* الصور */}
+          {/* Images */}
           <div className={`relative ${viewMode === 'grid' ? 'h-64' : 'w-80 h-48 flex-shrink-0'}`}>
             {listing.images && listing.images.length > 0 ? (
               <CldImage
@@ -167,80 +168,98 @@ function SearchResultsContent() {
                 crop="fill"
                 quality="auto"
                 loading="lazy"
-                className="object-cover w-full h-full"
+                className="object-cover w-full h-full rounded-2xl"
               />
             ) : (
-              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-2xl">
                 <MapPin className="w-8 h-8 text-gray-400" />
               </div>
             )}
-            
-            {/* شارات */}
-            <div className="absolute top-2 left-2 flex gap-2">
+
+            {/* Badges */}
+            <div className="absolute top-3 left-3 flex gap-2">
               {listing.isNew && (
-                <Badge className="bg-rose-500 text-white">New</Badge>
+                <Badge className="bg-rose-500 text-white text-xs font-medium px-2 py-1 rounded-full">
+                  New
+                </Badge>
               )}
               {listing.guestFavorite && (
-                <Badge className="bg-amber-500 text-white">Guest favorite</Badge>
+                <Badge className="bg-amber-500 text-white text-xs font-medium px-2 py-1 rounded-full">
+                  Guest favorite
+                </Badge>
               )}
             </div>
-            
-            {/* أيقونة القلب */}
+
+            {/* Heart icon */}
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+              className="absolute top-3 right-3 bg-white/90 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center"
             >
-              <Heart className="w-4 h-4" />
+              <Heart className="w-4 h-4 text-gray-600 hover:text-rose-500 transition-colors" />
             </Button>
           </div>
 
-          {/* المحتوى */}
+          {/* Content */}
           <CardContent className={`p-4 ${viewMode === 'list' ? 'flex-1' : ''}`}>
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-semibold text-lg truncate">{listing.title}</h3>
+            <div className="flex justify-between items-start mb-1">
+              <h3 className="font-semibold text-lg truncate leading-tight">{listing.title}</h3>
               <div className="flex items-center gap-1 ml-2 flex-shrink-0">
                 <Star className="w-4 h-4 fill-current text-yellow-500" />
-                <span className="text-sm font-medium">{listing.rating}</span>
+                <span className="text-sm font-medium">{listing.rating.toFixed(2)}</span>
                 <span className="text-sm text-gray-500">({listing.reviews})</span>
               </div>
             </div>
-            
-            <p className="text-gray-600 text-sm mb-2 truncate">{listing.location}</p>
-            
+
+            <p className="text-gray-600 text-sm mb-1 truncate">{listing.location}</p>
+
             {listing.distance && (
-              <p className="text-gray-500 text-sm mb-2">{listing.distance}</p>
+              <p className="text-gray-500 text-sm mb-2 italic">{listing.distance}</p>
             )}
-            
-            <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+
+            <div className="flex items-center gap-3 text-sm text-gray-600 mb-2">
               <span>{listing.bedrooms} bedroom{listing.bedrooms > 1 ? 's' : ''}</span>
+              <span>•</span>
               <span>{listing.bathrooms} bathroom{listing.bathrooms > 1 ? 's' : ''}</span>
+              <span>•</span>
               <span>Up to {listing.maxGuests} guests</span>
             </div>
-            
-            {/* الخدمات */}
+
+            {/* Amenities */}
             {listing.amenities && listing.amenities.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-3">
+              <div className="flex flex-wrap gap-1.5 mb-3">
                 {listing.amenities.slice(0, 3).map((amenity) => (
-                  <Badge key={amenity} variant="secondary" className="text-xs">
+                  <Badge
+                    key={amenity}
+                    variant="secondary"
+                    className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full"
+                  >
                     {amenity}
                   </Badge>
                 ))}
                 {listing.amenities.length > 3 && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge
+                    variant="secondary"
+                    className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full"
+                  >
                     +{listing.amenities.length - 3} more
                   </Badge>
                 )}
               </div>
             )}
-            
-            <div className="flex justify-between items-end mt-auto">
+
+            <div className="flex justify-between items-end mt-2">
               <div>
                 <span className="text-xl font-bold">${listing.price}</span>
-                <span className="text-gray-600"> night</span>
+                <span className="text-sm text-gray-600"> / night</span>
               </div>
               <Link href={`/listing/${listing.id}`}>
-                <Button size="sm">View Details</Button>
+                <Button
+                  size="sm"
+                  className="bg-rose-500 hover:bg-rose-600 text-white rounded-lg"
+                >
+                  View Details
+                </Button>
               </Link>
             </div>
           </CardContent>
@@ -273,28 +292,33 @@ function SearchResultsContent() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      {/* رأس النتائج */}
+      {/* Results header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">
           {destination ? `Places in ${destination}` : 'Search Results'}
         </h1>
-        
+
         {stats && (
           <div className="flex flex-wrap gap-2 text-sm text-gray-600 mb-4">
             <span>{stats.total} places found</span>
             {stats.filters.dateRange && (
-              <span>• {new Date(stats.filters.dateRange.checkIn).toLocaleDateString()} - {new Date(stats.filters.dateRange.checkOut).toLocaleDateString()}</span>
+              <span>
+                • {new Date(stats.filters.dateRange.checkIn).toLocaleDateString()} -{' '}
+                {new Date(stats.filters.dateRange.checkOut).toLocaleDateString()}
+              </span>
             )}
             {stats.filters.guests && (
-              <span>• {stats.filters.guests} guest{stats.filters.guests > 1 ? 's' : ''}</span>
+              <span>
+                • {stats.filters.guests} guest{stats.filters.guests > 1 ? 's' : ''}
+              </span>
             )}
           </div>
         )}
 
-        {/* أشرطة التحكم */}
+        {/* Control bars */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            {/* فلاتر */}
+            {/* Filters */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
@@ -309,9 +333,9 @@ function SearchResultsContent() {
                     Narrow down your search results
                   </SheetDescription>
                 </SheetHeader>
-                
+
                 <div className="space-y-6 mt-6">
-                  {/* نطاق السعر */}
+                  {/* Price range */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">
                       Price Range: ${priceRange[0]} - ${priceRange[1] === 2000 ? '2000+' : priceRange[1]}
@@ -325,8 +349,8 @@ function SearchResultsContent() {
                       className="w-full"
                     />
                   </div>
-                  
-                  {/* الخدمات */}
+
+                  {/* Amenities */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">Amenities</label>
                     <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
@@ -339,7 +363,7 @@ function SearchResultsContent() {
                               if (e.target.checked) {
                                 setSelectedAmenities([...selectedAmenities, amenity]);
                               } else {
-                                setSelectedAmenities(selectedAmenities.filter(a => a !== amenity));
+                                setSelectedAmenities(selectedAmenities.filter((a) => a !== amenity));
                               }
                             }}
                             className="rounded border-gray-300 text-rose-500 focus:ring-rose-500"
@@ -353,7 +377,7 @@ function SearchResultsContent() {
               </SheetContent>
             </Sheet>
 
-            {/* الترتيب */}
+            {/* Sorting */}
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Sort by" />
@@ -369,7 +393,7 @@ function SearchResultsContent() {
             </Select>
           </div>
 
-          {/* وضع العرض */}
+          {/* View mode */}
           <div className="flex items-center gap-2">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'outline'}
@@ -391,7 +415,7 @@ function SearchResultsContent() {
         </div>
       </div>
 
-      {/* النتائج */}
+      {/* Results */}
       {listings.length === 0 ? (
         <div className="text-center py-12">
           <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -400,11 +424,13 @@ function SearchResultsContent() {
           <Button onClick={() => window.history.back()}>Go Back</Button>
         </div>
       ) : (
-        <div className={
-          viewMode === 'grid' 
-            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-            : 'space-y-4'
-        }>
+        <div
+          className={
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+              : 'space-y-4'
+          }
+        >
           <AnimatePresence>
             {listings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
@@ -418,15 +444,17 @@ function SearchResultsContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading search...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading search...</p>
+          </div>
         </div>
-      </div>
-    }>
-      <SearchResultsContent />
+      }
+    >
+      <SearchContent />
     </Suspense>
   );
 }

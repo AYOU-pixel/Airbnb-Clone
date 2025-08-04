@@ -1,4 +1,3 @@
-// app/components/listing/ListingCard.tsx
 "use client";
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Heart, ChevronLeft, ChevronRight, Star } from "lucide-react";
@@ -8,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { CldImage } from "next-cloudinary";
 import { useSession } from "next-auth/react";
+import { motion } from "framer-motion";
 
 type Props = {
   id: string;
@@ -15,9 +15,9 @@ type Props = {
   location: string;
   images: string[];
   price: string;
-  rating?: number | null; // Allow null to match Prisma schema
-  distance?: string | null; // Allow null to match Prisma schema
-  dateRange?: string | null; // Allow null to match Prisma schema
+  rating?: number | null;
+  distance?: string | null;
+  dateRange?: string | null;
   isNew?: boolean;
   guestFavorite?: boolean;
   isInWishlist?: boolean;
@@ -227,165 +227,170 @@ export default function ListingCard({
   );
 
   return (
-    <Card
-      className="bg-white border-0 shadow-none rounded-xl overflow-hidden cursor-pointer group transition-all duration-150 hover:shadow-lg"
-      onClick={handleCardClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <div
-        ref={imageRef}
-        className="relative w-full aspect-square overflow-hidden rounded-xl bg-gray-100"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+      <Card
+        className="bg-white border-0 shadow-lg rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl"
+        onClick={handleCardClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-        <div className="relative w-full h-full">
-          <CldImage
-            src={validImages[currentImageIndex]}
-            alt={title}
-            width={400}
-            height={400}
-            crop="fill"
-            quality="auto"
-            loading="lazy"
-            className="object-cover transition-transform duration-150 group-hover:scale-105 will-change-transform"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
-        </div>
+        <div
+          ref={imageRef}
+          className="relative w-full aspect-square overflow-hidden rounded-xl bg-gray-100"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="relative w-full h-full">
+            <CldImage
+              src={validImages[currentImageIndex]}
+              alt={title}
+              width={400}
+              height={400}
+              crop="fill"
+              quality="auto"
+              loading="lazy"
+              className="object-cover w-full h-full rounded-xl transition-transform duration-200 hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-200" />
+          </div>
 
-        {validImages.length > 1 && (
-          <>
-            <Button
-              className={cn(
-                "absolute top-1/2 left-3 -translate-y-1/2 bg-white/95 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-800 shadow-lg border-0 transition-all duration-100 flex items-center justify-center z-30 will-change-transform",
-                showPrevButton
-                  ? "opacity-100 translate-x-0 pointer-events-auto"
-                  : "opacity-0 -translate-x-2 pointer-events-none"
-              )}
-              size="icon"
-              onClick={handlePrevImage}
-              onMouseDown={handleInteractionStart}
-              onMouseUp={handleInteractionEnd}
-              onMouseLeave={handleInteractionEnd}
-              onTouchStart={handleInteractionStart}
-              onTouchEnd={handleInteractionEnd}
-              aria-label="Previous image"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
-            <Button
-              className={cn(
-                "absolute top-1/2 right-3 -translate-y-1/2 bg-white/95 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-800 shadow-lg border-0 transition-all duration-100 flex items-center justify-center z-30 will-change-transform",
-                showNextButton
-                  ? "opacity-100 translate-x-0 pointer-events-auto"
-                  : "opacity-0 translate-x-2 pointer-events-none"
-              )}
-              size="icon"
-              onClick={handleNextImage}
-              onMouseDown={handleInteractionStart}
-              onMouseUp={handleInteractionEnd}
-              onMouseLeave={handleInteractionEnd}
-              onTouchStart={handleInteractionStart}
-              onTouchEnd={handleInteractionEnd}
-              aria-label="Next image"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </>
-        )}
-
-        {validImages.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-1 z-20">
-            {validImages.map((_, index) => (
-              <button
-                key={index}
-                onClick={(e) => handleDotClick(index, e)}
+          {validImages.length > 1 && (
+            <>
+              <Button
+                className={cn(
+                  "absolute top-1/2 left-3 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-700 shadow-md border-0 transition-all duration-150 flex items-center justify-center z-30",
+                  showPrevButton
+                    ? "opacity-100 translate-x-0 pointer-events-auto"
+                    : "opacity-0 -translate-x-2 pointer-events-none"
+                )}
+                size="icon"
+                onClick={handlePrevImage}
                 onMouseDown={handleInteractionStart}
                 onMouseUp={handleInteractionEnd}
+                onMouseLeave={handleInteractionEnd}
                 onTouchStart={handleInteractionStart}
                 onTouchEnd={handleInteractionEnd}
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+
+              <Button
                 className={cn(
-                  "w-2 h-2 rounded-full transition-all duration-100 border-0 cursor-pointer will-change-transform",
-                  index === currentImageIndex
-                    ? "bg-white shadow-sm scale-110"
-                    : "bg-white/60 hover:bg-white/80 active:bg-white/90"
+                  "absolute top-1/2 right-3 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-0 h-8 w-8 text-gray-700 shadow-md border-0 transition-all duration-150 flex items-center justify-center z-30",
+                  showNextButton
+                    ? "opacity-100 translate-x-0 pointer-events-auto"
+                    : "opacity-0 translate-x-2 pointer-events-none"
                 )}
-                aria-label={`Go to image ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
+                size="icon"
+                onClick={handleNextImage}
+                onMouseDown={handleInteractionStart}
+                onMouseUp={handleInteractionEnd}
+                onMouseLeave={handleInteractionEnd}
+                onTouchStart={handleInteractionStart}
+                onTouchEnd={handleInteractionEnd}
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-3 right-3 rounded-full bg-transparent hover:bg-white/20 active:bg-white/30 p-0 h-8 w-8 text-white transition-all duration-100 z-30 border-0 will-change-transform"
-          onClick={handleLikeToggle}
-          onMouseDown={handleInteractionStart}
-          onMouseUp={handleInteractionEnd}
-          onTouchStart={handleInteractionStart}
-          onTouchEnd={handleInteractionEnd}
-          aria-label="Toggle favorite"
-          disabled={isLoading}
-        >
-          <Heart
-            className={cn(
-              "h-6 w-6 transition-all duration-100 will-change-transform",
-              isLiked
-                ? "fill-red-500 text-red-500 scale-110"
-                : "fill-black/20 text-white hover:scale-110",
-              isLoading && "opacity-50"
-            )}
-          />
-        </Button>
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-1.5 z-20">
+                {validImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => handleDotClick(index, e)}
+                    onMouseDown={handleInteractionStart}
+                    onMouseUp={handleInteractionEnd}
+                    onTouchStart={handleInteractionStart}
+                    onTouchEnd={handleInteractionEnd}
+                    className={cn(
+                      "w-2 h-2 rounded-full transition-all duration-150 border-0 cursor-pointer",
+                      index === currentImageIndex
+                        ? "bg-white scale-125 shadow-sm"
+                        : "bg-white/50 hover:bg-white/80 active:bg-white"
+                    )}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
 
-        {guestFavorite && (
-          <div className="absolute top-3 left-3 bg-white text-black text-xs font-medium px-2 py-1 rounded-md shadow-sm z-20">
-            Guest favorite
-          </div>
-        )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-3 right-3 rounded-full bg-white/90 hover:bg-white p-0 h-8 w-8 text-gray-700 shadow-md transition-all duration-150 z-30 border-0"
+            onClick={handleLikeToggle}
+            onMouseDown={handleInteractionStart}
+            onMouseUp={handleInteractionEnd}
+            onTouchStart={handleInteractionStart}
+            onTouchEnd={handleInteractionEnd}
+            aria-label="Toggle favorite"
+            disabled={isLoading}
+          >
+            <Heart
+              className={cn(
+                "h-5 w-5 transition-all duration-150",
+                isLiked
+                  ? "fill-red-500 text-red-500 scale-110"
+                  : "fill-transparent text-gray-700 hover:scale-110",
+                isLoading && "opacity-50"
+              )}
+            />
+          </Button>
 
-        {isNew && (
-          <div className="absolute top-3 left-3 bg-white text-black text-xs font-medium px-2 py-1 rounded-md shadow-sm z-20">
-            New
-          </div>
-        )}
-      </div>
+          {(guestFavorite || isNew) && (
+            <div className="absolute top-3 left-3 flex gap-2">
+              {guestFavorite && (
+                <span className="bg-white text-gray-900 text-xs font-medium px-2.5 py-1 rounded-full shadow-sm">
+                  Guest favorite
+                </span>
+              )}
+              {isNew && (
+                <span className="bg-white text-gray-900 text-xs font-medium px-2.5 py-1 rounded-full shadow-sm">
+                  New
+                </span>
+              )}
+            </div>
+          )}
+        </div>
 
-      <CardContent className="p-0 pt-3">
-        <div className="space-y-1">
+        <CardContent className="p-0 pt-3 space-y-1.5">
           <div className="flex justify-between items-start">
-            <h3 className="font-medium text-gray-900 text-base leading-tight pr-2 truncate">
+            <h3 className="font-semibold text-gray-900 text-base leading-tight pr-4 truncate">
               {title}
             </h3>
-            {rating != null && ( // Check for null explicitly
+            {rating != null && (
               <div className="flex items-center text-sm font-medium text-gray-900 flex-shrink-0">
-                <Star className="w-3 h-3 fill-current mr-1" />
-                {rating.toFixed(1)}
+                <Star className="w-3.5 h-3.5 fill-current text-yellow-500 mr-1" />
+                {rating.toFixed(2)}
               </div>
             )}
           </div>
 
-          {distance != null && ( // Check for null explicitly
-            <p className="text-sm text-gray-500 leading-tight">{distance}</p>
+          <p className="text-sm text-gray-500 leading-tight truncate">{location}</p>
+
+          {distance != null && (
+            <p className="text-sm text-gray-500 leading-tight italic">{distance}</p>
           )}
 
-          <p className="text-sm text-gray-500 leading-tight">{location}</p>
-
-          {dateRange != null && ( // Check for null explicitly
+          {dateRange != null && (
             <p className="text-sm text-gray-500 leading-tight">{dateRange}</p>
           )}
 
-          <div className="pt-1">
-            <p className="text-base text-gray-900 font-medium">
-              ${price}{" "}
-              <span className="font-normal text-gray-500">night</span>
+          <div className="pt-0.5">
+            <p className="text-base text-gray-900 font-semibold">
+              ${price} <span className="font-normal text-gray-500 text-sm">/ night</span>
             </p>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
