@@ -1,4 +1,3 @@
-// components/filters/AirbnbSearchBar.tsx
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -8,6 +7,7 @@ import { format } from "date-fns";
 import { Button } from "@/app/components/ui/button";
 import { ExpandedSearchBar } from "./ExpandedSearchBar";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 // Define the shape of a search query for clarity
 export interface SearchQuery {
@@ -27,17 +27,18 @@ interface AirbnbSearchBarProps {
   expanded?: boolean;
   onExpand?: (expanded: boolean) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSearchResults?: (results: any) => void; // لتمرير النتائج للمكون الأب
+  onSearchResults?: (results: any) => void;
 }
 
-export function AirbnbSearchBar({
+// Inner component that uses useSearchParams
+function SearchBarContent({
   expanded,
   onExpand,
   onSearchResults,
 }: AirbnbSearchBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const isControlled = typeof expanded === "boolean" && typeof onExpand === "function";
   const [internalExpanded, setInternalExpanded] = useState(false);
   const isExpanded = isControlled ? expanded : internalExpanded;
@@ -50,7 +51,7 @@ export function AirbnbSearchBar({
   const [isSearching, setIsSearching] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
-  // Input states - تهيئة من URL params إذا كانت متوفرة
+  // Input states - initialize from URL params if available
   const [destination, setDestination] = useState(() => searchParams.get('destination') || "");
   const [checkInDate, setCheckInDate] = useState<Date | undefined>(() => {
     const checkIn = searchParams.get('checkIn');
@@ -65,7 +66,7 @@ export function AirbnbSearchBar({
     return guestsParam ? parseInt(guestsParam) : 0;
   });
 
-  // Location suggestions - يمكن أن تأتي من API في المستقبل
+  // Location suggestions - could come from an API in the future
   const [locationSuggestions] = useState<LocationSuggestion[]>([
     { id: "1", name: "Malibu", description: "California, United States" },
     { id: "2", name: "Charleston", description: "South Carolina, United States" },
@@ -107,7 +108,7 @@ export function AirbnbSearchBar({
     setIsSearching(true);
     
     try {
-      // بناء URL للبحث
+      // Build URL for search
       const params = new URLSearchParams();
       
       if (searchQuery.destination) {
@@ -128,7 +129,7 @@ export function AirbnbSearchBar({
 
       console.log('🔍 Searching with params:', params.toString());
 
-      // استدعاء API البحث
+      // Call search API
       const response = await fetch(`/api/search?${params.toString()}`);
       
       if (!response.ok) {
@@ -139,18 +140,18 @@ export function AirbnbSearchBar({
       
       console.log('🔍 Search results:', data);
 
-      // تمرير النتائج للمكون الأب إذا كان متوفراً
+      // Pass results to parent if provided
       if (onSearchResults) {
         onSearchResults(data);
       }
 
-      // التنقل إلى صفحة النتائج مع معاملات البحث
+      // Navigate to results page with search params
       const searchUrl = `/search?${params.toString()}`;
       router.push(searchUrl);
       
     } catch (error) {
       console.error('❌ Search error:', error);
-      // يمكن إضافة toast notification هنا
+      // Could add toast notification here
     } finally {
       setIsSearching(false);
     }
@@ -261,6 +262,14 @@ export function AirbnbSearchBar({
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+export default function AirbnbSearchBar(props: AirbnbSearchBarProps) {
+  return (
+    <Suspense fallback={<div>Loading search bar...</div>}>
+      <SearchBarContent {...props} />
+    </Suspense>
   );
 }
 

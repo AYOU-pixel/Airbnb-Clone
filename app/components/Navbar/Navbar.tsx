@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Logo from "./Logo";
 import NavTabs from "./NavTabs";
-import { AirbnbSearchBar } from "../filters/SearchBar";
+import  AirbnbSearchBar  from "../filters/SearchBar";
 import { UserMenu } from "./UserMenu";
 
 export default function Navbar() {
