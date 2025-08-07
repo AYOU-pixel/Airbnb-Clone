@@ -190,7 +190,7 @@ export function AirbnbFooter() {
             {/* Left Side - Copyright and Legal */}
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <div className="text-sm text-gray-600">
-                © 2025 Airbnb, Inc.
+                © 2025 Airbnb, Inc. · Developed by AYOUB web developer
               </div>
               <div className="flex items-center space-x-4 text-sm">
                 <Link href="/terms" className="text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-200">
