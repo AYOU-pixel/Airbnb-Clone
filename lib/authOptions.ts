@@ -1,10 +1,39 @@
-import { AuthOptions, DefaultSession } from 'next-auth';
+import { AuthOptions, DefaultSession, DefaultUser } from 'next-auth';
 import { PrismaClient } from '@prisma/client';
 import MongoDBAdapter from '@/lib/mongodb-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
 import bcrypt from 'bcryptjs';
+
+declare module 'next-auth' {
+  interface Session extends DefaultSession {
+    user: {
+      id: string;
+      phone?: string | null;
+    } & DefaultSession['user'];
+    accessToken?: string;
+  }
+
+  interface User extends DefaultUser {
+    phone?: string | null;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    user?: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      phone?: string | null;
+    };
+    accessToken?: string;
+    provider?: string;
+  }
+}
 
 const prisma = new PrismaClient();
 
@@ -143,8 +172,11 @@ export const authOptions: AuthOptions = {
       if (token.user) {
         session.user = {
           ...session.user,
-          ...token.user,
           id: token.sub ?? token.user.id,
+          name: token.user.name ?? session.user?.name ?? null,
+          email: token.user.email ?? session.user?.email ?? null,
+          image: token.user.image ?? session.user?.image ?? null,
+          phone: token.user.phone ?? null,
         };
       }
 
@@ -162,39 +194,3 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
 };
-
-declare module 'next-auth' {
-  interface User {
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-    phone?: string | null;
-  }
-
-  interface Session extends DefaultSession {
-    user: {
-      id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      phone?: string | null;
-    } & Omit<DefaultSession['user'], 'id'>;
-    accessToken?: string;
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    id: string;
-    user?: {
-      id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      phone?: string | null;
-    };
-    accessToken?: string;
-    provider?: string;
-  }
-}
