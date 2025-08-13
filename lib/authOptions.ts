@@ -1,39 +1,12 @@
-import { AuthOptions, DefaultSession, DefaultUser } from 'next-auth';
+import { AuthOptions } from 'next-auth';
 import { PrismaClient } from '@prisma/client';
 import MongoDBAdapter from '@/lib/mongodb-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
 import bcrypt from 'bcryptjs';
-
-declare module 'next-auth' {
-  interface Session extends DefaultSession {
-    user: {
-      id: string;
-      phone?: string | null;
-    } & DefaultSession['user'];
-    accessToken?: string;
-  }
-
-  interface User extends DefaultUser {
-    phone?: string | null;
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    id: string;
-    user?: {
-      id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      phone?: string | null;
-    };
-    accessToken?: string;
-    provider?: string;
-  }
-}
+import { Session } from 'next-auth';
+import { JWT } from 'next-auth/jwt';
 
 const prisma = new PrismaClient();
 
@@ -168,10 +141,11 @@ export const authOptions: AuthOptions = {
 
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (token.user) {
-        session.user = {
-          ...session.user,
+        // Type assertion to ensure TypeScript recognizes the extended Session interface
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (session.user as any) = {
           id: token.sub ?? token.user.id,
           name: token.user.name ?? session.user?.name ?? null,
           email: token.user.email ?? session.user?.email ?? null,
