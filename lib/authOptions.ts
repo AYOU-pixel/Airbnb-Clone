@@ -179,7 +179,7 @@ declare module 'next-auth' {
       email?: string | null;
       image?: string | null;
       phone?: string | null;
-    } & DefaultSession['user'];
+    } & Omit<DefaultSession['user'], 'id'>;
     accessToken?: string;
   }
 }
