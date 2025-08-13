@@ -41,14 +41,14 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
+  phone         String?       // Add this line
   accounts      Account[]
   sessions      Session[]
   reservations  Reservation[]
   createdAt     DateTime      @default(now())
-  wishlist      Wishlist[]    // ← Added relation to Wishlist
+  wishlist      Wishlist[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
-
 }
 
 model VerificationToken {

@@ -1,43 +1,58 @@
-import { AuthOptions } from 'next-auth';
-import { prisma } from '@/lib/prisma';
+import { AuthOptions, DefaultSession } from 'next-auth';
+import { PrismaClient } from '@prisma/client';
 import MongoDBAdapter from '@/lib/mongodb-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
 import bcrypt from 'bcryptjs';
 
+const prisma = new PrismaClient();
+
 export const authOptions: AuthOptions = {
   adapter: MongoDBAdapter(prisma),
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
       allowDangerousEmailAccountLinking: true,
     }),
     GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
       allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
-      name: 'credentials',
+      id: 'credentials',
+      name: 'Credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Email and password are required');
+        }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
 
-        if (!user || !user.password) return null;
+        if (!user || !user.password) {
+          throw new Error('Invalid credentials');
+        }
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) return null;
+        if (!isValid) {
+          throw new Error('Invalid credentials');
+        }
 
-        return { id: user.id, name: user.name, email: user.email };
+        return {
+          id: user.id,
+          name: user.name ?? null,
+          email: user.email ?? null,
+          image: user.image ?? null,
+          phone: user.phone ?? null,
+        };
       },
     }),
   ],
@@ -47,42 +62,139 @@ export const authOptions: AuthOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
-      // Allow OAuth sign-ins without any extra checks.
-      if (account?.provider !== 'credentials') {
-        return true;
-      }
-
-      // For credential sign-ins, check if the email is already linked to an OAuth account.
-      if (user.email) {
+      if (account && account.provider !== 'credentials') {
         const existingUser = await prisma.user.findUnique({
-          where: { email: user.email },
-          include: { accounts: true },
+          where: { email: user.email ?? undefined },
         });
 
-        // If the user exists and has linked accounts, they must sign in via OAuth.
-        if (existingUser?.accounts && existingUser.accounts.length > 0) {
-          return '/signin?error=AccountNotLinked';
+        if (existingUser) {
+          const existingAccount = await prisma.account.findFirst({
+            where: {
+              userId: existingUser.id,
+              provider: account.provider,
+            },
+          });
+
+          if (!existingAccount && account) {
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                ...(account.access_token && { access_token: account.access_token }),
+                ...(account.expires_at && { expires_at: account.expires_at }),
+                ...(account.token_type && { token_type: account.token_type }),
+                ...(account.scope && { scope: account.scope }),
+                ...(account.id_token && { id_token: account.id_token }),
+                ...(account.session_state && { session_state: account.session_state }),
+              },
+            });
+          }
+
+          user.id = existingUser.id;
+        }
+      }
+      return true;
+    },
+    async jwt({ token, user, account }) {
+      if (account && user) {
+        token.id = user.id;
+        if (account.access_token) token.accessToken = account.access_token;
+        if (account.provider) token.provider = account.provider;
+      }
+
+      if (user) {
+        token.user = {
+          id: user.id,
+          name: user.name ?? null,
+          email: user.email ?? null,
+          image: user.image ?? null,
+          phone: user.phone ?? null,
+        };
+      }
+
+      if (token.id && !user) {
+        const freshUser = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            phone: true,
+          },
+        });
+
+        if (freshUser) {
+          token.user = {
+            id: freshUser.id,
+            name: freshUser.name ?? null,
+            email: freshUser.email ?? null,
+            image: freshUser.image ?? null,
+            phone: freshUser.phone ?? null,
+          };
         }
       }
 
-      return true;
+      return token;
     },
     async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub;
+      if (token.user) {
+        session.user = {
+          ...session.user,
+          ...token.user,
+          id: token.sub ?? token.user.id,
+        };
       }
+
+      if (token.accessToken) {
+        session.accessToken = token.accessToken;
+      }
+
       return session;
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.sub = user.id;
-      }
-      return token;
     },
   },
   pages: {
     signIn: '/signin',
+    error: '/signin',
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
 };
+
+declare module 'next-auth' {
+  interface User {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    phone?: string | null;
+  }
+
+  interface Session extends DefaultSession {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      phone?: string | null;
+    } & DefaultSession['user'];
+    accessToken?: string;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    user?: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      phone?: string | null;
+    };
+    accessToken?: string;
+    provider?: string;
+  }
+}
