@@ -51,12 +51,14 @@ export function UserMenu() {
           <Menu className="w-3 h-3 sm:w-4 sm:h-4" />
           <Avatar className="w-5 h-5 sm:w-6 sm:h-6">
             {userImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={userImage}
                 alt={userName}
                 className="rounded-full w-full h-full object-cover"
               />
             ) : (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
                   userName || "User"
@@ -114,11 +116,7 @@ export function UserMenu() {
 
           <DropdownMenuSeparator />
 
-          <Link href="/manage">
-            <DropdownMenuItem className="cursor-pointer text-sm">
-              Manage listings
-            </DropdownMenuItem>
-          </Link>
+          
 
           <Link href="/host">
             <DropdownMenuItem className="cursor-pointer text-sm">
