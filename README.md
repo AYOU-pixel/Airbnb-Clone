@@ -66,8 +66,3 @@ npm run dev
 
 Crafted by **AYOUB** – a self-taught Full-Stack Developer focused on building elegant, secure, and high-performance web applications.
 
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
